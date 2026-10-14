@@ -1,0 +1,391 @@
+name: Build APK
+
+# Triggered by the html-to-apk tool (workflow_dispatch). Builds index.html into an APK.
+on:
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: 'App name (default: the page <title>)'
+        required: false
+        default: ''
+      package_name:
+        description: 'Package name, e.g. com.mycompany.mygame (default: derived from repo name)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Android project
+        run: |
+          mkdir -p '_android'
+          cat > '_android/settings.gradle' <<'EOF_FILE_0'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "HtmlApp"
+          include ':app'
+          EOF_FILE_0
+          mkdir -p '_android'
+          cat > '_android/build.gradle' <<'EOF_FILE_1'
+          plugins {
+              id 'com.android.application' version '8.5.2' apply false
+          }
+          EOF_FILE_1
+          mkdir -p '_android'
+          cat > '_android/gradle.properties' <<'EOF_FILE_2'
+          org.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8
+          android.useAndroidX=false
+          android.nonTransitiveRClass=true
+          EOF_FILE_2
+          mkdir -p '_android/app'
+          cat > '_android/app/build.gradle' <<'EOF_FILE_3'
+          plugins {
+              id 'com.android.application'
+          }
+
+          android {
+              namespace 'com.htmlapp.wrapper'
+              compileSdk 34
+
+              defaultConfig {
+                  applicationId "__APP_ID__"
+                  minSdk 24
+                  targetSdk 34
+                  versionCode __VERSION_CODE__
+                  versionName "__VERSION_NAME__"
+              }
+
+              signingConfigs {
+                  debug {
+                      storeFile file('debug.keystore')
+                      storePassword 'android'
+                      keyAlias 'androiddebugkey'
+                      keyPassword 'android'
+                  }
+              }
+
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                  }
+              }
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+          EOF_FILE_3
+          mkdir -p '_android/app'
+          cat > '_android/app/debug.keystore.b64' <<'EOF_FILE_4'
+          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
+          EOF_FILE_4
+          mkdir -p '_android/app/src/main'
+          cat > '_android/app/src/main/AndroidManifest.xml' <<'EOF_FILE_5'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+              <uses-permission android:name="android.permission.INTERNET" />
+
+              <application
+                  android:allowBackup="true"
+                  android:icon="@drawable/ic_launcher"
+                  android:label="@string/app_name"
+                  android:supportsRtl="true"
+                  android:usesCleartextTraffic="true"
+                  android:theme="@android:style/Theme.Material.Light.NoActionBar">
+
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+
+          </manifest>
+          EOF_FILE_5
+          mkdir -p '_android/app/src/main/java/com/htmlapp/wrapper'
+          cat > '_android/app/src/main/java/com/htmlapp/wrapper/MainActivity.java' <<'EOF_FILE_6'
+          package com.htmlapp.wrapper;
+
+          import android.app.Activity;
+          import android.content.Intent;
+          import android.net.Uri;
+          import android.os.Bundle;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebResourceRequest;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+
+          public class MainActivity extends Activity {
+
+              private WebView webView;
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+
+                  webView = new WebView(this);
+                  setContentView(webView);
+
+                  WebSettings s = webView.getSettings();
+                  s.setJavaScriptEnabled(true);
+                  s.setDomStorageEnabled(true);
+                  s.setAllowFileAccess(false);
+                  s.setAllowContentAccess(false);
+                  s.setMediaPlaybackRequiresUserGesture(false);
+
+                  webView.setWebChromeClient(new WebChromeClient());
+                  webView.setWebViewClient(new WebViewClient() {
+                      @Override
+                      public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                          Uri uri = request.getUrl();
+                          String scheme = uri.getScheme();
+                          if ("http".equals(scheme) || "https".equals(scheme)
+                                  || "mailto".equals(scheme) || "tel".equals(scheme)) {
+                              try {
+                                  startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                              } catch (Exception ignored) {
+                                  // no app can handle this link
+                              }
+                              return true;
+                          }
+                          return false;
+                      }
+                  });
+
+                  if (savedInstanceState != null) {
+                      webView.restoreState(savedInstanceState);
+                  } else {
+                      webView.loadUrl("file:///android_asset/index.html");
+                  }
+              }
+
+              @Override
+              protected void onSaveInstanceState(Bundle outState) {
+                  super.onSaveInstanceState(outState);
+                  webView.saveState(outState);
+              }
+
+              @Override
+              public void onBackPressed() {
+                  if (webView.canGoBack()) {
+                      webView.goBack();
+                  } else {
+                      super.onBackPressed();
+                  }
+              }
+
+              @Override
+              protected void onDestroy() {
+                  if (webView != null) {
+                      webView.destroy();
+                  }
+                  super.onDestroy();
+              }
+          }
+          EOF_FILE_6
+          mkdir -p '_android/app/src/main/res/drawable'
+          cat > '_android/app/src/main/res/drawable/ic_launcher.xml' <<'EOF_FILE_7'
+          <?xml version="1.0" encoding="utf-8"?>
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="108dp"
+              android:height="108dp"
+              android:viewportWidth="108"
+              android:viewportHeight="108">
+              <path
+                  android:fillColor="#1E66F5"
+                  android:pathData="M24,10h60a14,14 0 0 1 14,14v60a14,14 0 0 1 -14,14h-60a14,14 0 0 1 -14,-14v-60a14,14 0 0 1 14,-14z" />
+              <path
+                  android:fillColor="#FFFFFF"
+                  android:pathData="M42,32L42,76L78,54z" />
+          </vector>
+          EOF_FILE_7
+
+      - name: Customize project
+        env:
+          APP_NAME_INPUT: "${{ github.event.inputs.app_name }}"
+          APP_ID_INPUT: "${{ github.event.inputs.package_name }}"
+          REPO: "${{ github.repository }}"
+          RUN_NUMBER: "${{ github.run_number }}"
+        run: |
+          python3 - <<'PY'
+          import os, re, html, base64, shutil, sys, pathlib
+
+          root = pathlib.Path("_android")
+          app = root / "app"
+          assets = app / "src/main/assets"
+          assets.mkdir(parents=True, exist_ok=True)
+
+          # 1) the web content: www/ folder (with index.html) or a single index.html
+          www, idx = pathlib.Path("www"), pathlib.Path("index.html")
+          if (www / "index.html").is_file():
+              shutil.copytree(www, assets, dirs_exist_ok=True)
+              main_html = www / "index.html"
+          elif idx.is_file():
+              shutil.copy(idx, assets / "index.html")
+              main_html = idx
+          else:
+              print("::error::index.html not found. Upload your HTML file to the repository root and name it exactly index.html")
+              sys.exit(1)
+
+          # 2) app name: workflow input, else the page <title>, else a default
+          text = main_html.read_text(encoding="utf-8", errors="ignore")
+          m = re.search(r"<title[^>]*>(.*?)</title>", text, re.S | re.I)
+          title = html.unescape(m.group(1)) if m else ""
+          name = " ".join((os.environ.get("APP_NAME_INPUT", "").strip() or title or "My App").split())[:50]
+
+          # 3) package name: workflow input, else derived from the repository name
+          JAVA_KW = {"abstract", "assert", "boolean", "break", "byte", "case", "catch", "char", "class",
+                     "const", "continue", "default", "do", "double", "else", "enum", "extends", "final",
+                     "finally", "float", "for", "goto", "if", "implements", "import", "instanceof", "int",
+                     "interface", "long", "native", "new", "package", "private", "protected", "public",
+                     "return", "short", "static", "strictfp", "super", "switch", "synchronized", "this",
+                     "throw", "throws", "transient", "try", "void", "volatile", "while", "true", "false", "null"}
+          repo = os.environ.get("REPO", "").split("/")[-1].lower()
+          slug = re.sub(r"[^a-z0-9]", "", repo) or "app"
+          if not slug[0].isalpha():
+              slug = "app" + slug
+          if slug in JAVA_KW:
+              slug += "app"
+          app_id = os.environ.get("APP_ID_INPUT", "").strip() or "com.html2apk." + slug
+          segments = app_id.split(".")
+          if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+", app_id) or any(s in JAVA_KW for s in segments):
+              print("::error::Invalid package name: " + app_id + " (use letters/digits/underscore, at least two parts, e.g. com.mycompany.mygame)")
+              sys.exit(1)
+
+
+          def xml_str(s):
+              s = s.replace("\\", "\\\\").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+              s = s.replace("'", "\\'").replace('"', '\\"')
+              if s[:1] in ("@", "?"):
+                  s = "\\" + s
+              return s
+
+
+          values = app / "src/main/res/values"
+          values.mkdir(parents=True, exist_ok=True)
+          (values / "strings.xml").write_text(
+              '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <string name="app_name">%s</string>\n</resources>\n' % xml_str(name),
+              encoding="utf-8")
+
+          # 4) version: bumps on every build so new builds install over old ones
+          run = os.environ.get("RUN_NUMBER", "1").strip() or "1"
+          g = app / "build.gradle"
+          t = g.read_text(encoding="utf-8")
+          t = t.replace("__APP_ID__", app_id).replace("__VERSION_CODE__", run).replace("__VERSION_NAME__", "1.0." + run)
+          g.write_text(t, encoding="utf-8")
+
+          # 5) fixed signing key (same key every build, so updates install over older versions)
+          (app / "debug.keystore").write_bytes(base64.b64decode((app / "debug.keystore.b64").read_text()))
+
+          # 6) optional custom icon: icon.png in the repository root
+          if pathlib.Path("icon.png").is_file():
+              shutil.copy("icon.png", app / "src/main/res/drawable/ic_launcher.png")
+              (app / "src/main/res/drawable/ic_launcher.xml").unlink()
+
+          print("App name:", name)
+          print("Package :", app_id)
+          print("Version : 1.0." + run, "(code " + run + ")")
+
+          PY
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.9
+
+      - name: Build APK
+        run: gradle -p _android assembleDebug
+
+      - name: Collect APK
+        run: |
+          mkdir -p out
+          cp _android/app/build/outputs/apk/debug/app-debug.apk out/app.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: out/app.apk
+
+      - name: Publish release (direct APK download)
+        env:
+          GH_TOKEN: "${{ github.token }}"
+        run: |
+          gh release create "build-${{ github.run_number }}" out/app.apk \
+            --title "Build ${{ github.run_number }}" \
+            --notes "APK built from index.html" \
+            --target "${{ github.sha }}"
