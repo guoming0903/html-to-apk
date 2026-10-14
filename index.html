@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>لعبة النقط والمربعات</title>
+<style>
+  :root{
+    --red:#e53935; --blue:#1e66f5;
+    --red-fill:rgba(229,57,53,.35); --blue-fill:rgba(30,102,245,.35);
+    --bg:#f4f1ea; --card:#fff; --ink:#222; --muted:#888;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:var(--bg);color:var(--ink);
+    display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:12px}
+  h1{margin:6px 0 10px;font-size:1.5rem}
+  .scores{display:flex;gap:10px;width:100%;max-width:560px;margin-bottom:10px}
+  .player{flex:1;background:var(--card);border-radius:14px;padding:10px;text-align:center;
+    border:3px solid transparent;transition:.2s;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+  .player b{display:block;font-size:1rem}
+  .player span{font-size:2rem;font-weight:700}
+  .player.red{color:var(--red)} .player.blue{color:var(--blue)}
+  .player.active.red{border-color:var(--red);background:#fff1f0}
+  .player.active.blue{border-color:var(--blue);background:#eff5ff}
+  #status{margin:2px 0 8px;font-size:1.05rem;min-height:1.4em;font-weight:600}
+  .board-wrap{width:100%;max-width:560px;background:var(--card);border-radius:14px;padding:8px;
+    box-shadow:0 2px 8px rgba(0,0,0,.1)}
+  svg{width:100%;height:auto;display:block;touch-action:manipulation}
+  .dot{fill:#333}
+  .hit{stroke:transparent;stroke-width:26;stroke-linecap:round;cursor:pointer}
+  .vis{stroke:#cfcac0;stroke-width:3;stroke-dasharray:2 6;stroke-linecap:round;pointer-events:none}
+  .drawn .vis{stroke-dasharray:none;stroke-width:6}
+  .drawn .hit{cursor:default;pointer-events:none}
+  .controls{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0;align-items:center}
+  button,select{font:inherit;padding:8px 14px;border-radius:10px;border:1px solid #bbb;background:#fff;cursor:pointer}
+  button.primary{background:#333;color:#fff;border-color:#333}
+  button:disabled{opacity:.4;cursor:default}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:16px;z-index:10}
+  .modal.show{display:flex}
+  .box{background:#fff;border-radius:18px;padding:22px;max-width:360px;width:100%;text-align:center}
+  .box h2{margin:0 0 12px}
+  .stat{display:flex;justify-content:space-around;margin:14px 0}
+  .stat div{font-size:1rem}
+  .stat strong{display:block;font-size:2.4rem}
+  .r{color:var(--red)} .b{color:var(--blue)}
+</style>
+</head>
+<body>
+<h1>🔴 لعبة النقط والمربعات 🔵</h1>
+
+<div class="scores">
+  <div class="player red" id="pRed"><b>الأحمر</b><span id="sRed">0</span></div>
+  <div class="player blue" id="pBlue"><b>الأزرق</b><span id="sBlue">0</span></div>
+</div>
+<div id="status"></div>
+
+<div class="board-wrap"><svg id="svg"></svg></div>
+
+<div class="controls">
+  <label>الصفوف <select id="rows"></select></label>
+  <label>الأعمدة <select id="cols"></select></label>
+  <button class="primary" id="newBtn">لعبة جديدة</button>
+  <button id="undoBtn">↩ تراجع</button>
+</div>
+
+<div class="modal" id="modal">
+  <div class="box">
+    <h2 id="winTitle"></h2>
+    <div class="stat">
+      <div class="r">المربعات الحمراء<strong id="fRed">0</strong></div>
+      <div class="b">المربعات الزرقاء<strong id="fBlue">0</strong></div>
+    </div>
+    <button class="primary" id="againBtn">العب مرة أخرى</button>
+  </div>
+</div>
+
+<script>
+const CELL = 60, PAD = 24;
+const COLORS = ["red","blue"];
+const NAMES = ["الأحمر","الأزرق"];
+let R, C, H, V, owner, turn, history, finished;
+
+const rowsSel = document.getElementById("rows");
+const colsSel = document.getElementById("cols");
+for (let i = 2; i <= 12; i++) {
+  rowsSel.add(new Option(i, i));
+  colsSel.add(new Option(i, i));
+}
+rowsSel.value = 5; colsSel.value = 5;
+
+function newGame() {
+  R = +rowsSel.value; C = +colsSel.value;
+  H = Array.from({length:R+1}, () => Array(C).fill(-1));   // خطوط أفقية
+  V = Array.from({length:R},   () => Array(C+1).fill(-1)); // خطوط رأسية
+  owner = Array.from({length:R}, () => Array(C).fill(-1));
+  turn = 0; history = []; finished = false;
+  document.getElementById("modal").classList.remove("show");
+  render();
+}
+
+function boxDone(r, c) {
+  return r >= 0 && c >= 0 && r < R && c < C &&
+    H[r][c] >= 0 && H[r+1][c] >= 0 && V[r][c] >= 0 && V[r][c+1] >= 0;
+}
+
+function play(type, r, c) {
+  const arr = type === "h" ? H : V;
+  if (finished || arr[r][c] >= 0) return;
+  const closed = [];
+  arr[r][c] = turn;
+  const cand = type === "h" ? [[r-1,c],[r,c]] : [[r,c-1],[r,c]];
+  for (const [br, bc] of cand) {
+    if (boxDone(br, bc) && owner[br][bc] < 0) { owner[br][bc] = turn; closed.push([br,bc]); }
+  }
+  history.push({type, r, c, closed, player: turn});
+  if (closed.length === 0) turn = 1 - turn; // إغلاق مربع = دور إضافي
+  render();
+  if (owner.flat().every(o => o >= 0)) endGame();
+}
+
+function undo() {
+  if (!history.length) return;
+  const m = history.pop();
+  (m.type === "h" ? H : V)[m.r][m.c] = -1;
+  for (const [br, bc] of m.closed) owner[br][bc] = -1;
+  turn = m.player; finished = false;
+  document.getElementById("modal").classList.remove("show");
+  render();
+}
+
+function scores() {
+  const s = [0,0];
+  owner.flat().forEach(o => { if (o >= 0) s[o]++; });
+  return s;
+}
+
+function render() {
+  const W = PAD*2 + C*CELL, Ht = PAD*2 + R*CELL;
+  const svg = document.getElementById("svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${Ht}`);
+  let out = "";
+  // المربعات الملونة
+  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+    if (owner[r][c] >= 0) {
+      const x = PAD + c*CELL, y = PAD + r*CELL;
+      out += `<rect x="${x}" y="${y}" width="${CELL}" height="${CELL}" fill="var(--${COLORS[owner[r][c]]}-fill)"/>`;
+      out += `<text x="${x+CELL/2}" y="${y+CELL/2+7}" text-anchor="middle" font-size="22" fill="var(--${COLORS[owner[r][c]]})" font-weight="700">${owner[r][c]===0?"أ":"ز"}</text>`;
+    }
+  }
+  const lineSVG = (type, r, c, x1, y1, x2, y2, o) => {
+    const col = o >= 0 ? `var(--${COLORS[o]})` : "";
+    return `<g class="${o>=0?"drawn":""}" ${o<0?`data-t="${type}" data-r="${r}" data-c="${c}"`:""}>
+      <line class="vis" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" ${col?`style="stroke:${col}"`:""}/>
+      <line class="hit" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/></g>`;
+  };
+  for (let r = 0; r <= R; r++) for (let c = 0; c < C; c++)
+    out += lineSVG("h", r, c, PAD+c*CELL, PAD+r*CELL, PAD+(c+1)*CELL, PAD+r*CELL, H[r][c]);
+  for (let r = 0; r < R; r++) for (let c = 0; c <= C; c++)
+    out += lineSVG("v", r, c, PAD+c*CELL, PAD+r*CELL, PAD+c*CELL, PAD+(r+1)*CELL, V[r][c]);
+  for (let r = 0; r <= R; r++) for (let c = 0; c <= C; c++)
+    out += `<circle class="dot" cx="${PAD+c*CELL}" cy="${PAD+r*CELL}" r="5.5"/>`;
+  svg.innerHTML = out;
+
+  const s = scores();
+  document.getElementById("sRed").textContent = s[0];
+  document.getElementById("sBlue").textContent = s[1];
+  document.getElementById("pRed").classList.toggle("active", turn === 0 && !finished);
+  document.getElementById("pBlue").classList.toggle("active", turn === 1 && !finished);
+  const st = document.getElementById("status");
+  if (!finished) {
+    st.innerHTML = `الدور على <span class="${turn===0?"r":"b"}">${NAMES[turn]}</span>`;
+  }
+  document.getElementById("undoBtn").disabled = history.length === 0;
+}
+
+function endGame() {
+  finished = true;
+  const s = scores();
+  document.getElementById("fRed").textContent = s[0];
+  document.getElementById("fBlue").textContent = s[1];
+  document.getElementById("winTitle").textContent =
+    s[0] === s[1] ? "🤝 تعادل!" : `🏆 فاز ${s[0] > s[1] ? "الأحمر" : "الأزرق"}!`;
+  document.getElementById("status").textContent = "انتهت اللعبة";
+  document.getElementById("modal").classList.add("show");
+  render();
+}
+
+document.getElementById("svg").addEventListener("click", e => {
+  const g = e.target.closest("g[data-t]");
+  if (g) play(g.dataset.t, +g.dataset.r, +g.dataset.c);
+});
+document.getElementById("newBtn").onclick = newGame;
+document.getElementById("againBtn").onclick = newGame;
+document.getElementById("undoBtn").onclick = undo;
+rowsSel.onchange = colsSel.onchange = newGame;
+
+newGame();
+</script>
+</body>
+</html>
