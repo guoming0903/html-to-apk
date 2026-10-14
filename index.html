@@ -3,198 +3,558 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>لعبة النقط والمربعات</title>
+<title>محوّل HTML إلى APK</title>
 <style>
   :root{
-    --red:#e53935; --blue:#1e66f5;
-    --red-fill:rgba(229,57,53,.35); --blue-fill:rgba(30,102,245,.35);
-    --bg:#f4f1ea; --card:#fff; --ink:#222; --muted:#888;
+    --bg:#f4f1ea; --card:#fff; --ink:#222; --muted:#6b6b6b; --line:#e3ded2;
+    --blue:#1e66f5; --green:#1a8f4c; --red:#d32f2f; --amber:#b26a00;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  body{margin:0;font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:var(--bg);color:var(--ink);
-    display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:12px}
-  h1{margin:6px 0 10px;font-size:1.5rem}
-  .scores{display:flex;gap:10px;width:100%;max-width:560px;margin-bottom:10px}
-  .player{flex:1;background:var(--card);border-radius:14px;padding:10px;text-align:center;
-    border:3px solid transparent;transition:.2s;box-shadow:0 2px 6px rgba(0,0,0,.08)}
-  .player b{display:block;font-size:1rem}
-  .player span{font-size:2rem;font-weight:700}
-  .player.red{color:var(--red)} .player.blue{color:var(--blue)}
-  .player.active.red{border-color:var(--red);background:#fff1f0}
-  .player.active.blue{border-color:var(--blue);background:#eff5ff}
-  #status{margin:2px 0 8px;font-size:1.05rem;min-height:1.4em;font-weight:600}
-  .board-wrap{width:100%;max-width:560px;background:var(--card);border-radius:14px;padding:8px;
-    box-shadow:0 2px 8px rgba(0,0,0,.1)}
-  svg{width:100%;height:auto;display:block;touch-action:manipulation}
-  .dot{fill:#333}
-  .hit{stroke:transparent;stroke-width:26;stroke-linecap:round;cursor:pointer}
-  .vis{stroke:#cfcac0;stroke-width:3;stroke-dasharray:2 6;stroke-linecap:round;pointer-events:none}
-  .drawn .vis{stroke-dasharray:none;stroke-width:6}
-  .drawn .hit{cursor:default;pointer-events:none}
-  .controls{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0;align-items:center}
-  button,select{font:inherit;padding:8px 14px;border-radius:10px;border:1px solid #bbb;background:#fff;cursor:pointer}
-  button.primary{background:#333;color:#fff;border-color:#333}
-  button:disabled{opacity:.4;cursor:default}
-  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:16px;z-index:10}
-  .modal.show{display:flex}
-  .box{background:#fff;border-radius:18px;padding:22px;max-width:360px;width:100%;text-align:center}
-  .box h2{margin:0 0 12px}
-  .stat{display:flex;justify-content:space-around;margin:14px 0}
-  .stat div{font-size:1rem}
-  .stat strong{display:block;font-size:2.4rem}
-  .r{color:var(--red)} .b{color:var(--blue)}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Tahoma,Arial,sans-serif;line-height:1.6}
+  main{max-width:640px;margin:0 auto;padding:14px 14px 40px}
+  h1{font-size:1.45rem;margin:8px 0 4px}
+  h2{font-size:1.05rem;margin:0 0 10px}
+  .lead{color:var(--muted);margin:0 0 14px;font-size:.95rem}
+  .card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.07)}
+  label{display:block;font-size:.9rem;font-weight:600;margin:10px 0 4px}
+  input[type=text],input[type=password],textarea{width:100%;font:inherit;padding:10px;border:1px solid #c9c4b8;border-radius:10px;background:#fff;color:var(--ink)}
+  input[dir=ltr],textarea[dir=ltr]{text-align:left}
+  textarea{min-height:150px;resize:vertical;font-family:Consolas,Menlo,monospace;font-size:.85rem}
+  input[type=file]{width:100%;font:inherit;padding:8px 0}
+  .btn{display:inline-block;font:inherit;font-weight:700;text-decoration:none;text-align:center;padding:10px 16px;border-radius:10px;border:1px solid #bbb;background:#fff;color:var(--ink);cursor:pointer}
+  .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  .btn.big{display:block;width:100%;padding:14px;font-size:1.1rem}
+  .btn:disabled{opacity:.5;cursor:default}
+  .link{background:none;border:none;color:var(--blue);font:inherit;cursor:pointer;padding:6px 0;text-decoration:underline}
+  .note{font-size:.85rem;color:var(--muted);margin:8px 0 0}
+  .warn{font-size:.85rem;color:var(--amber);background:#fff7e6;border-radius:8px;padding:8px 10px;margin-top:10px}
+  .chk{display:flex;align-items:center;gap:8px;font-weight:400;margin-top:12px}
+  .chk input{width:auto}
+  ol.how{padding-inline-start:22px;margin:8px 0;font-size:.92rem}
+  details summary{cursor:pointer;font-weight:600;margin-top:12px}
+  #detected{margin-top:8px}
+  ul#steps{list-style:none;margin:14px 0 0;padding:0}
+  #steps li{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line);font-size:.95rem}
+  #steps li:last-child{border-bottom:none}
+  #steps .ic{width:1.4em;text-align:center}
+  #steps small{color:var(--muted);margin-inline-start:auto}
+  #steps li.run{font-weight:700}
+  #steps li.ok .ic{color:var(--green)}
+  #steps li.err{color:var(--red);font-weight:700}
+  .result{margin-top:14px;border-radius:12px;padding:14px}
+  .result.ok{background:#eaf7ef;border:1px solid #b7e1c6}
+  .result.bad{background:#fdecec;border:1px solid #f3b9b9}
+  .result h3{margin:0 0 8px}
+  .result ul{margin:8px 0;padding-inline-start:20px;font-size:.9rem}
+  .result a.plain{color:var(--blue)}
+  pre#log{display:none;background:#1e1e1e;color:#d7d7d7;border-radius:10px;padding:10px;font-size:.75rem;max-height:220px;overflow:auto;white-space:pre-wrap;direction:ltr;text-align:left;margin:12px 0 0}
+  pre#log.show{display:block}
 </style>
 </head>
 <body>
-<h1>🔴 لعبة النقط والمربعات 🔵</h1>
+<main>
+  <h1>📱 محوّل HTML إلى APK</h1>
+  <p class="lead">الصق كود HTML (أو اختر الملف) واضغط «ابنِ الـAPK». البناء يتم مجاناً على GitHub، وتحمّل ملف الـAPK الجاهز للتثبيت.</p>
 
-<div class="scores">
-  <div class="player red" id="pRed"><b>الأحمر</b><span id="sRed">0</span></div>
-  <div class="player blue" id="pBlue"><b>الأزرق</b><span id="sBlue">0</span></div>
-</div>
-<div id="status"></div>
+  <section class="card" id="setup">
+    <h2>١) ربط حساب GitHub (مرة واحدة)</h2>
+    <ol class="how">
+      <li>اضغط الزر تحت، وسجّل دخول لـGitHub لو طلب.</li>
+      <li>اختر مدة قصيرة (مثلاً 7 أيام)، ثم <b>Generate token</b>.</li>
+      <li>انسخ التوكن والصقه في الخانة.</li>
+    </ol>
+    <a class="btn" id="tokenLink" target="_blank" rel="noopener noreferrer"
+       href="https://github.com/settings/tokens/new?description=html-to-apk&scopes=repo,workflow">فتح صفحة إنشاء التوكن</a>
+    <label for="token">التوكن (Token)</label>
+    <input type="password" id="token" dir="ltr" autocomplete="off" spellcheck="false" placeholder="ghp_xxxxxxxxxxxx">
+    <label for="repo">اسم المستودع (يُنشأ تلقائياً)</label>
+    <input type="text" id="repo" dir="ltr" autocomplete="off" spellcheck="false" value="html-to-apk-builds">
+    <label class="chk"><input type="checkbox" id="remember" checked> تذكّر التوكن على هذا الجهاز</label>
+    <button class="link" id="forget" type="button">نسيان التوكن المحفوظ</button>
+    <p class="note">التوكن يُرسل إلى <span dir="ltr">api.github.com</span> فقط، ولا يذهب لأي جهة ثانية. بعد ما تخلص احذفه من إعدادات GitHub.</p>
+    <p class="warn">المستودع يُنشأ <b>عام (Public)</b>، يعني الكود اللي تبنيه يقدر أي شخص يشوفه. لا تبنِ صفحات فيها بيانات سرية.</p>
+  </section>
 
-<div class="board-wrap"><svg id="svg"></svg></div>
+  <section class="card">
+    <h2>٢) ملف HTML</h2>
+    <input type="file" id="file" accept=".html,.htm,text/html">
+    <label for="code">أو الصق الكود هنا</label>
+    <textarea id="code" dir="ltr" spellcheck="false" placeholder="&lt;!DOCTYPE html&gt; ..."></textarea>
+    <div id="detected" class="note"></div>
+    <details>
+      <summary>خيارات إضافية</summary>
+      <label for="appName">اسم التطبيق (الافتراضي: عنوان الصفحة)</label>
+      <input type="text" id="appName" autocomplete="off">
+      <label for="pkg">معرّف الحزمة (Package)</label>
+      <input type="text" id="pkg" dir="ltr" autocomplete="off" spellcheck="false" placeholder="com.mycompany.mygame">
+      <p class="note">نفس المعرّف = التحديث يتثبّت فوق النسخة القديمة. معرّف مختلف = تطبيق منفصل. لو تركته فاضي يُحسب من اسم التطبيق.</p>
+      <label for="icon">أيقونة PNG (اختياري)</label>
+      <input type="file" id="icon" accept="image/png">
+    </details>
+  </section>
 
-<div class="controls">
-  <label>الصفوف <select id="rows"></select></label>
-  <label>الأعمدة <select id="cols"></select></label>
-  <button class="primary" id="newBtn">لعبة جديدة</button>
-  <button id="undoBtn">↩ تراجع</button>
-</div>
-
-<div class="modal" id="modal">
-  <div class="box">
-    <h2 id="winTitle"></h2>
-    <div class="stat">
-      <div class="r">المربعات الحمراء<strong id="fRed">0</strong></div>
-      <div class="b">المربعات الزرقاء<strong id="fBlue">0</strong></div>
-    </div>
-    <button class="primary" id="againBtn">العب مرة أخرى</button>
-  </div>
-</div>
+  <section class="card">
+    <button class="btn primary big" id="build" type="button">🔨 ابنِ الـAPK</button>
+    <ul id="steps"></ul>
+    <div id="result"></div>
+    <pre id="log"></pre>
+    <p class="note">البناء ياخذ عادة من دقيقتين إلى خمس. لو قفلت الصفحة يكمل على GitHub، وتلاقي الملف في صفحة <b>Releases</b> بالمستودع.</p>
+  </section>
+</main>
 
 <script>
-const CELL = 60, PAD = 24;
-const COLORS = ["red","blue"];
-const NAMES = ["الأحمر","الأزرق"];
-let R, C, H, V, owner, turn, history, finished;
+(function () {
+"use strict";
 
-const rowsSel = document.getElementById("rows");
-const colsSel = document.getElementById("cols");
-for (let i = 2; i <= 12; i++) {
-  rowsSel.add(new Option(i, i));
-  colsSel.add(new Option(i, i));
-}
-rowsSel.value = 5; colsSel.value = 5;
+var API = "https://api.github.com";
+var WF_B64 = "bmFtZTogQnVpbGQgQVBLCgojIFRyaWdnZXJlZCBieSB0aGUgaHRtbC10by1hcGsgdG9vbCAod29ya2Zsb3dfZGlzcGF0Y2gpLiBCdWlsZHMgaW5kZXguaHRtbCBpbnRvIGFuIEFQSy4Kb246CiAgd29ya2Zsb3dfZGlzcGF0Y2g6CiAgICBpbnB1dHM6CiAgICAgIGFwcF9uYW1lOgogICAgICAgIGRlc2NyaXB0aW9uOiAnQXBwIG5hbWUgKGRlZmF1bHQ6IHRoZSBwYWdlIDx0aXRsZT4pJwogICAgICAgIHJlcXVpcmVkOiBmYWxzZQogICAgICAgIGRlZmF1bHQ6ICcnCiAgICAgIHBhY2thZ2VfbmFtZToKICAgICAgICBkZXNjcmlwdGlvbjogJ1BhY2thZ2UgbmFtZSwgZS5nLiBjb20ubXljb21wYW55Lm15Z2FtZSAoZGVmYXVsdDogZGVyaXZlZCBmcm9tIHJlcG8gbmFtZSknCiAgICAgICAgcmVxdWlyZWQ6IGZhbHNlCiAgICAgICAgZGVmYXVsdDogJycKCnBlcm1pc3Npb25zOgogIGNvbnRlbnRzOiB3cml0ZQoKam9iczoKICBidWlsZDoKICAgIHJ1bnMtb246IHVidW50dS1sYXRlc3QKICAgIHN0ZXBzOgogICAgICAtIHVzZXM6IGFjdGlvbnMvY2hlY2tvdXRAdjQKCiAgICAgIC0gbmFtZTogQ3JlYXRlIEFuZHJvaWQgcHJvamVjdAogICAgICAgIHJ1bjogfAogICAgICAgICAgbWtkaXIgLXAgJ19hbmRyb2lkJwogICAgICAgICAgY2F0ID4gJ19hbmRyb2lkL3NldHRpbmdzLmdyYWRsZScgPDwnRU9GX0ZJTEVfMCcKICAgICAgICAgIHBsdWdpbk1hbmFnZW1lbnQgewogICAgICAgICAgICAgIHJlcG9zaXRvcmllcyB7CiAgICAgICAgICAgICAgICAgIGdvb2dsZSgpCiAgICAgICAgICAgICAgICAgIG1hdmVuQ2VudHJhbCgpCiAgICAgICAgICAgICAgICAgIGdyYWRsZVBsdWdpblBvcnRhbCgpCiAgICAgICAgICAgICAgfQogICAgICAgICAgfQogICAgICAgICAgZGVwZW5kZW5jeVJlc29sdXRpb25NYW5hZ2VtZW50IHsKICAgICAgICAgICAgICByZXBvc2l0b3JpZXNNb2RlLnNldChSZXBvc2l0b3JpZXNNb2RlLkZBSUxfT05fUFJPSkVDVF9SRVBPUykKICAgICAgICAgICAgICByZXBvc2l0b3JpZXMgewogICAgICAgICAgICAgICAgICBnb29nbGUoKQogICAgICAgICAgICAgICAgICBtYXZlbkNlbnRyYWwoKQogICAgICAgICAgICAgIH0KICAgICAgICAgIH0KICAgICAgICAgIHJvb3RQcm9qZWN0Lm5hbWUgPSAiSHRtbEFwcCIKICAgICAgICAgIGluY2x1ZGUgJzphcHAnCiAgICAgICAgICBFT0ZfRklMRV8wCiAgICAgICAgICBta2RpciAtcCAnX2FuZHJvaWQnCiAgICAgICAgICBjYXQgPiAnX2FuZHJvaWQvYnVpbGQuZ3JhZGxlJyA8PCdFT0ZfRklMRV8xJwogICAgICAgICAgcGx1Z2lucyB7CiAgICAgICAgICAgICAgaWQgJ2NvbS5hbmRyb2lkLmFwcGxpY2F0aW9uJyB2ZXJzaW9uICc4LjUuMicgYXBwbHkgZmFsc2UKICAgICAgICAgIH0KICAgICAgICAgIEVPRl9GSUxFXzEKICAgICAgICAgIG1rZGlyIC1wICdfYW5kcm9pZCcKICAgICAgICAgIGNhdCA+ICdfYW5kcm9pZC9ncmFkbGUucHJvcGVydGllcycgPDwnRU9GX0ZJTEVfMicKICAgICAgICAgIG9yZy5ncmFkbGUuanZtYXJncz0tWG14MmcgLURmaWxlLmVuY29kaW5nPVVURi04CiAgICAgICAgICBhbmRyb2lkLnVzZUFuZHJvaWRYPWZhbHNlCiAgICAgICAgICBhbmRyb2lkLm5vblRyYW5zaXRpdmVSQ2xhc3M9dHJ1ZQogICAgICAgICAgRU9GX0ZJTEVfMgogICAgICAgICAgbWtkaXIgLXAgJ19hbmRyb2lkL2FwcCcKICAgICAgICAgIGNhdCA+ICdfYW5kcm9pZC9hcHAvYnVpbGQuZ3JhZGxlJyA8PCdFT0ZfRklMRV8zJwogICAgICAgICAgcGx1Z2lucyB7CiAgICAgICAgICAgICAgaWQgJ2NvbS5hbmRyb2lkLmFwcGxpY2F0aW9uJwogICAgICAgICAgfQoKICAgICAgICAgIGFuZHJvaWQgewogICAgICAgICAgICAgIG5hbWVzcGFjZSAnY29tLmh0bWxhcHAud3JhcHBlcicKICAgICAgICAgICAgICBjb21waWxlU2RrIDM0CgogICAgICAgICAgICAgIGRlZmF1bHRDb25maWcgewogICAgICAgICAgICAgICAgICBhcHBsaWNhdGlvbklkICJfX0FQUF9JRF9fIgogICAgICAgICAgICAgICAgICBtaW5TZGsgMjQKICAgICAgICAgICAgICAgICAgdGFyZ2V0U2RrIDM0CiAgICAgICAgICAgICAgICAgIHZlcnNpb25Db2RlIF9fVkVSU0lPTl9DT0RFX18KICAgICAgICAgICAgICAgICAgdmVyc2lvbk5hbWUgIl9fVkVSU0lPTl9OQU1FX18iCiAgICAgICAgICAgICAgfQoKICAgICAgICAgICAgICBzaWduaW5nQ29uZmlncyB7CiAgICAgICAgICAgICAgICAgIGRlYnVnIHsKICAgICAgICAgICAgICAgICAgICAgIHN0b3JlRmlsZSBmaWxlKCdkZWJ1Zy5rZXlzdG9yZScpCiAgICAgICAgICAgICAgICAgICAgICBzdG9yZVBhc3N3b3JkICdhbmRyb2lkJwogICAgICAgICAgICAgICAgICAgICAga2V5QWxpYXMgJ2FuZHJvaWRkZWJ1Z2tleScKICAgICAgICAgICAgICAgICAgICAgIGtleVBhc3N3b3JkICdhbmRyb2lkJwogICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgfQoKICAgICAgICAgICAgICBidWlsZFR5cGVzIHsKICAgICAgICAgICAgICAgICAgcmVsZWFzZSB7CiAgICAgICAgICAgICAgICAgICAgICBtaW5pZnlFbmFibGVkIGZhbHNlCiAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICB9CgogICAgICAgICAgICAgIGNvbXBpbGVPcHRpb25zIHsKICAgICAgICAgICAgICAgICAgc291cmNlQ29tcGF0aWJpbGl0eSBKYXZhVmVyc2lvbi5WRVJTSU9OXzE3CiAgICAgICAgICAgICAgICAgIHRhcmdldENvbXBhdGliaWxpdHkgSmF2YVZlcnNpb24uVkVSU0lPTl8xNwogICAgICAgICAgICAgIH0KICAgICAgICAgIH0KICAgICAgICAgIEVPRl9GSUxFXzMKICAgICAgICAgIG1rZGlyIC1wICdfYW5kcm9pZC9hcHAnCiAgICAgICAgICBjYXQgPiAnX2FuZHJvaWQvYXBwL2RlYnVnLmtleXN0b3JlLmI2NCcgPDwnRU9GX0ZJTEVfNCcKICAgICAgICAgIE1JSUtaZ0lCQXpDQ0NoQUdDU3FHU0liM0RRRUhBYUNDQ2dFRWdnbjlNSUlKK1RDQ0JjQUdDU3FHU0liM0RRRUhBYUNDQmJFRWdnV3QKICAgICAgICAgIE1JSUZxVENDQmFVR0N5cUdTSWIzRFFFTUNnRUNvSUlGUURDQ0JUd3daZ1lKS29aSWh2Y05BUVVOTUZrd09BWUpLb1pJaHZjTkFRVU0KICAgICAgICAgIE1Dc0VGTHVBbVl0MDJlOU9UeFF5aTl4eVRRdFVyVFlqQWdJbkVBSUJJREFNQmdncWhraUc5dzBDQ1FVQU1CMEdDV0NHU0FGbEF3UUIKICAgICAgICAgIEtnUVFWYXpBcktIWVRqWjZGbjlEYVRJV1ZRU0NCTkIvZ3hKSVVrUlNXNnhiWkh6L3hWcGJESzJiTnRkQzQ2ZTZKQ3FwZ2hpWklkWGoKICAgICAgICAgIERRdllCbGRjWUttWEJuSE52emRCS082V3B6RzJaMWZHenpxN0N3b0NLenpIa3ZBa3lGVlI1aHZ4Y0hmU2xHWkE0L2E0UUx6cFNxTVoKICAgICAgICAgIHYxYk45UHRVNTdpcVRscnNnUXlyZ1NVeW42WUJGVFVIVWREUmpVMFp0dzFFeUJaejdycG9xdXJwTmVBZGF6ZEFzaVo1VVh0VzM4ZzAKICAgICAgICAgIHdNSjEwU1lPemlRZXVMSFQzNElTeEdDblBMNk1MWDdzZ0xrazg4RkYxVm56bzhFTXk3bzlUbEJSZ2tNU1RrcmltaDQ1ZXpVU1IzSzMKICAgICAgICAgIDViMk94MTJzZ29BZEpKQXBPVUFOb3BQTkRURXNyQmxkMmNYQ21rWkdwYVVUVjJsMlc3T2R5dFBiRmpMNmdkNHB2T1gvNm9UczgwZE8KICAgICAgICAgIEdBSjZERDBBSzc5SXJCTTVyeTZNZ0J4azIwc2dORE12RHBRdFZwNzk4VXV6cldGaldrOC81ZXZaSGlQYi96N21qeE9mL09zcEdtK2YKICAgICAgICAgIGFrZGtSL1hWZXNHbFFaK3hTSkN0TllTMXU5RTVSbmh3TDJrTnJGa3RPMDlUY1g3U2gwVFpZYlVHeWxoQVAzUVdKcDc1UzhuaWlCa0cKICAgICAgICAgIEcvcHNJVG9DWXFVNzk5VXlMS0J6eGZRMll6S053dWgzRU9UZmhsWmlFMTREbG1FU1pCcW44c0FWMjNhZEU5YkhKU1VzTC9VSlBzb04KICAgICAgICAgIDhEOGRNbURybXdIa1ZHdFNwcjNmSlFOak10VUNJaWVqQlZReWRQRVhMcmYxWkNyVTlRWUMwSnFjRzJkMlJKNFMzamgyUGd1L1dra3EKICAgICAgICAgIDRoK2pHdHI1OWNjWXY4bXZ3cGp4VVcyaWZCSmRyWU10dmNYc3QyUktwT3hrbTFWLzViMmRmQkRLbU9sMzZnQ1k0VzdtTEdDMmdBYSsKICAgICAgICAgIGxpc0hUVVhMWjJiNFZ2QjBkM1h5QjAwTVBXdVpsS2JYV1dPOGc2eTRyVEZrSW1tUVZXaWhTQnlkN0pXUzVzazZDU0d1VGFKUlYrYjQKICAgICAgICAgIHZHWGgraDl0UG5ZdHBsL2oyamIvZEFoOE9ReHRtcE0zNnpkOFZHeFY1M3A1OGsyY1FDTGNyZEtEbDZVVGFuWWFOZHVSQ2ZpZWtWamEKICAgICAgICAgIEx0VWo1THVEblhIQ3Z4L1IwQXYvSUJNTlgvL012Tm1EY1hTYWxYSTdCVm1zMmpsK2J0Vm1EUUFOTGMrUHJKZFZQWWRrRG1YQnVEbWEKICAgICAgICAgIEwyQUphQkxwRFF4Mlh3QUxXVGU3b3VNTGtaamwvZnpXeGRDRWVRcStFWWs2Tlh0UlF2cWs0TWV1RGhrZFc0eHlMVTFqY1ZiVlFzQUgKICAgICAgICAgICtGV2d3RTdEclRoaXh3TzdYTDAwSHFwdDU1VmRHdHBmV0F3bWsrZytLV1NSNGlnMlNia2Q3MHdFTjEyeTVPVm05UzdaSEtEVE1RUnYKICAgICAgICAgIFRKWXNnTUQyQkdsTE5rYjVBQnlLNExiOFAxNDdyOW1BVGdoR0tzaThoOU9RQ1B5SlYvdnF3K1d1T0YxbGdqeDhLSEN5dC80ZnBER3MKICAgICAgICAgIG5rUWRYWlhIbmcwakYxNmU4MU0wYm5hQWZkRE1rc0d1a3BrL0oxVEd2Nm12ek9LaHVEMys5NFdIV09WLzI3dDlYN3A3VkJsaWdsR1UKICAgICAgICAgIGZQaDFXTVk3Mnh6WEJxRnZHQ0RLN011UHJ3aTJ4azJDNzRnWTJST0RtZ0hPMmNxS3pTdXRXbE9KUU9MV0VBZ2xoWGhYdldrWkJlNGcKICAgICAgICAgIHdsV1NqSVRQSHVOb2dteFduME9JMk01WXJEeElTNmVlRFNqajNUUStIMExBckp3OEkvY04wQ3YvMzRkR2ZKSzEweUQ1M242cGpiUWMKICAgICAgICAgIDloYVJIUkhJaXBzZW9mand2aDNUUUdodkVRT001SWVMTnRCSURjZ3RwQUxGdDNiTEx3YWh2eWZ5eG9aSjZpeG41MGoyeFZ4a0ZjRTQKICAgICAgICAgIGhBamhTa3hvNFBFNlV4VlVaZXlNcmQ0V3pkbktOeUJhc2REbENPcWc3UzVYdlBTdUlpb3ZLUHVoTzlZWG5JV0U5MjNkMjJyUzNKNncKICAgICAgICAgIEd6c01iRDk4NDRJa25rY2ZtcmdEY2lUR2F6alNqK1JPWXdiemV4WXZsTDMzcjEwb3p1Z1NXTzYzMm16N2hOTXB6Y1F4NUZvd2RQQkoKICAgICAgICAgIHF6RlNNQzBHQ1NxR1NJYjNEUUVKRkRFZ0hoNEFZUUJ1QUdRQWNnQnZBR2tBWkFCa0FHVUFZZ0IxQUdjQWF3QmxBSGt3SVFZSktvWkkKICAgICAgICAgIGh2Y05BUWtWTVJRRUVsUnBiV1VnTVRjNU1qQXhNekExTURnek9UQ0NCREVHQ1NxR1NJYjNEUUVIQnFDQ0JDSXdnZ1FlQWdFQU1JSUUKICAgICAgICAgIEZ3WUpLb1pJaHZjTkFRY0JNR1lHQ1NxR1NJYjNEUUVGRFRCWk1EZ0dDU3FHU0liM0RRRUZEREFyQkJUR01IWUdiMFNXUUhXcVd4c0kKICAgICAgICAgIERGSk9xSmtWTndJQ0p4QUNBU0F3REFZSUtvWklodmNOQWdrRkFEQWRCZ2xnaGtnQlpRTUVBU29FRUxiTnY2YWNTMytNTVdJMGR2aWMKICAgICAgICAgIC8zeUFnZ09nWEZnZmVwby9BaVpZQnlLTmtaUnlubVlEbFBIQ3hzRCs0MWJhM3lkL2hqaEpDV3BDdGZremZWcUwxdllwSjNrbWRVUW8KICAgICAgICAgIHJpTys2SU9QcmppRUkvVHMxbmNCdU5CdU9Mc2hZSGJMbDkrS2hoQW9BVEJWZWc3d1ZPeG9WZ3dqek5iZk1DTThiYnZKMUdVcGFvbGoKICAgICAgICAgIEVlY09jcjdSbW5ET045RGx6a0FZOWVpZFBCdWhPRlhCNCtnSWUvRi9wVkRtTEJzc05wdnJkbUJvVTJLeENnZWhYVCthdEFENll2dm0KICAgICAgICAgIENneGNzOVN2dmJ1SzFkUUFTSVhqSnFvK3ppOTRkUFFxVUpJRmhhWFVZNHFpMHQ2N2NXdURVelByc251UlZWWnlUa3cxNTJnZU41YXAKICAgICAgICAgIFNob0Z3aE5DMUsyUUFCSi9BQkxYNElEUDd5WGMyUDdpVDBUSXpuV3lrc0VEWnJwV2lvanRYaUZBSEZtL3loa2ZrdmVqY2pOeExhY0sKICAgICAgICAgIHhQb0hLODVxeU91MXJWUUNxN1RRRmFTanQ1bzZROHZUMk16dFZxaFRVMVRRTmUyY0h3UkdVT0w4MVZ5Qm9uTWJTYkp3WXo5aThmanUKICAgICAgICAgIE1kVSs2YXNCa1laSDVaeGZ0Snp4aWZhY2ZleXpYQk0xN3FzbDc1aFBGTEltaVhVd1A1Umh6WG5JbnQraGVNYjd0MVN4cE8yYlFzZ3gKICAgICAgICAgIE5Nd3daYXpMclZlZjN3Zi9vbHQ4WFIyNE5YVEtremtDQjFBMzhXaERGSHg3YStHVUpKdUY2Zm9JMlFxaklqUjZtNU14REVKY25tdDQKICAgICAgICAgIERELzBuejYyMENMWnZPbEJzSU1MdnpjRk9VZVRFWko5UWtKUDhUV09kSk9uWmpCOUpQZTZ3UVNlT3ZFd2pJbUltV2RMWG5jWHJpdVgKICAgICAgICAgIFRkdDZrRUJEdFBFT3o4NHJXaWZXWHdtY05ObmhPejFNTkVNOS9zdSsvbis2dGxWN25pVlA0amgxL3FTWnpiNjRyUXkrNjg0SmxaSDYKICAgICAgICAgIEoxMUloOVFZb2hQbnBWS0NGNjFBdE9oMEhhVnowMm1VeWpUTzRwTFc1L0cwMHo2UEVqNFRreGpBUStOYm1MZlZmSzVKNkY4aHIwUXMKICAgICAgICAgIE53WURtRG5JYnpNMHd4dDhDK1JEa2FtS3Evamh3VG9FaVVjc3gvczl6eGpaeG5YSnYwMnJPdUZBVTVaNkttZkN4ekQ1WDU4TEU3ZzQKICAgICAgICAgIEN4NVF0Z0dybWFQaHY4MjN6eHVsODArR21zdlA4WEdGTGdzWUkyNFFOQXd3NUJmNXI5Wmo1WUgrNlVyMkhyMUlpQWdwczhsNWlobHkKICAgICAgICAgIEQxSFVGMHJBRVc0NXFNVXFzOUJ1WGg3M0QwV01rSHV2UklEd1FwN1Z2TzVWU3NYWlZqVXpuaDhGeTIzZEJZV1RIMXU4MUlNNVFZb0cKICAgICAgICAgIEF4YUdjUnpMcU1OR1h4Z3A0TS93SjJZQ29uWk5aUHpFMEpmakVnbjloTVprREJSRHZqRGZkVGNKNmpBaTJWMFcwQWFVTzJiNWlOWncKICAgICAgICAgIENaak50V1Y5bXFDZkdHbnVUdVFJSDRPaDNXbEJNbHpQZFQwSHprUWlDY05iaVI3N3VpYlJzNDMwK0tFcGgwcFNYZVptVGFqWTFJdk0KICAgICAgICAgIHU4NXJZa1gyWG1lbGJONng2ODBLaEJyNE10NlNLVEJOTURFd0RRWUpZSVpJQVdVREJBSUJCUUFFSUR4UXlGL0VPT2Qwd1dBQU1zS0IKICAgICAgICAgIFZGcURldnRZb3VPOEJ2bEV6ajZncjVBNUJCUWVwcmxiTng3dlZLdUNiNFhxOWpjMjdUNHFBUUlDSnhBPQogICAgICAgICAgRU9GX0ZJTEVfNAogICAgICAgICAgbWtkaXIgLXAgJ19hbmRyb2lkL2FwcC9zcmMvbWFpbicKICAgICAgICAgIGNhdCA+ICdfYW5kcm9pZC9hcHAvc3JjL21haW4vQW5kcm9pZE1hbmlmZXN0LnhtbCcgPDwnRU9GX0ZJTEVfNScKICAgICAgICAgIDw/eG1sIHZlcnNpb249IjEuMCIgZW5jb2Rpbmc9InV0Zi04Ij8+CiAgICAgICAgICA8bWFuaWZlc3QgeG1sbnM6YW5kcm9pZD0iaHR0cDovL3NjaGVtYXMuYW5kcm9pZC5jb20vYXBrL3Jlcy9hbmRyb2lkIj4KCiAgICAgICAgICAgICAgPHVzZXMtcGVybWlzc2lvbiBhbmRyb2lkOm5hbWU9ImFuZHJvaWQucGVybWlzc2lvbi5JTlRFUk5FVCIgLz4KCiAgICAgICAgICAgICAgPGFwcGxpY2F0aW9uCiAgICAgICAgICAgICAgICAgIGFuZHJvaWQ6YWxsb3dCYWNrdXA9InRydWUiCiAgICAgICAgICAgICAgICAgIGFuZHJvaWQ6aWNvbj0iQGRyYXdhYmxlL2ljX2xhdW5jaGVyIgogICAgICAgICAgICAgICAgICBhbmRyb2lkOmxhYmVsPSJAc3RyaW5nL2FwcF9uYW1lIgogICAgICAgICAgICAgICAgICBhbmRyb2lkOnN1cHBvcnRzUnRsPSJ0cnVlIgogICAgICAgICAgICAgICAgICBhbmRyb2lkOnVzZXNDbGVhcnRleHRUcmFmZmljPSJ0cnVlIgogICAgICAgICAgICAgICAgICBhbmRyb2lkOnRoZW1lPSJAYW5kcm9pZDpzdHlsZS9UaGVtZS5NYXRlcmlhbC5MaWdodC5Ob0FjdGlvbkJhciI+CgogICAgICAgICAgICAgICAgICA8YWN0aXZpdHkKICAgICAgICAgICAgICAgICAgICAgIGFuZHJvaWQ6bmFtZT0iLk1haW5BY3Rpdml0eSIKICAgICAgICAgICAgICAgICAgICAgIGFuZHJvaWQ6ZXhwb3J0ZWQ9InRydWUiCiAgICAgICAgICAgICAgICAgICAgICBhbmRyb2lkOmNvbmZpZ0NoYW5nZXM9Im9yaWVudGF0aW9ufHNjcmVlblNpemV8a2V5Ym9hcmRIaWRkZW58c21hbGxlc3RTY3JlZW5TaXplfHNjcmVlbkxheW91dCI+CiAgICAgICAgICAgICAgICAgICAgICA8aW50ZW50LWZpbHRlcj4KICAgICAgICAgICAgICAgICAgICAgICAgICA8YWN0aW9uIGFuZHJvaWQ6bmFtZT0iYW5kcm9pZC5pbnRlbnQuYWN0aW9uLk1BSU4iIC8+CiAgICAgICAgICAgICAgICAgICAgICAgICAgPGNhdGVnb3J5IGFuZHJvaWQ6bmFtZT0iYW5kcm9pZC5pbnRlbnQuY2F0ZWdvcnkuTEFVTkNIRVIiIC8+CiAgICAgICAgICAgICAgICAgICAgICA8L2ludGVudC1maWx0ZXI+CiAgICAgICAgICAgICAgICAgIDwvYWN0aXZpdHk+CiAgICAgICAgICAgICAgPC9hcHBsaWNhdGlvbj4KCiAgICAgICAgICA8L21hbmlmZXN0PgogICAgICAgICAgRU9GX0ZJTEVfNQogICAgICAgICAgbWtkaXIgLXAgJ19hbmRyb2lkL2FwcC9zcmMvbWFpbi9qYXZhL2NvbS9odG1sYXBwL3dyYXBwZXInCiAgICAgICAgICBjYXQgPiAnX2FuZHJvaWQvYXBwL3NyYy9tYWluL2phdmEvY29tL2h0bWxhcHAvd3JhcHBlci9NYWluQWN0aXZpdHkuamF2YScgPDwnRU9GX0ZJTEVfNicKICAgICAgICAgIHBhY2thZ2UgY29tLmh0bWxhcHAud3JhcHBlcjsKCiAgICAgICAgICBpbXBvcnQgYW5kcm9pZC5hcHAuQWN0aXZpdHk7CiAgICAgICAgICBpbXBvcnQgYW5kcm9pZC5jb250ZW50LkludGVudDsKICAgICAgICAgIGltcG9ydCBhbmRyb2lkLm5ldC5Vcmk7CiAgICAgICAgICBpbXBvcnQgYW5kcm9pZC5vcy5CdW5kbGU7CiAgICAgICAgICBpbXBvcnQgYW5kcm9pZC53ZWJraXQuV2ViQ2hyb21lQ2xpZW50OwogICAgICAgICAgaW1wb3J0IGFuZHJvaWQud2Via2l0LldlYlJlc291cmNlUmVxdWVzdDsKICAgICAgICAgIGltcG9ydCBhbmRyb2lkLndlYmtpdC5XZWJTZXR0aW5nczsKICAgICAgICAgIGltcG9ydCBhbmRyb2lkLndlYmtpdC5XZWJWaWV3OwogICAgICAgICAgaW1wb3J0IGFuZHJvaWQud2Via2l0LldlYlZpZXdDbGllbnQ7CgogICAgICAgICAgcHVibGljIGNsYXNzIE1haW5BY3Rpdml0eSBleHRlbmRzIEFjdGl2aXR5IHsKCiAgICAgICAgICAgICAgcHJpdmF0ZSBXZWJWaWV3IHdlYlZpZXc7CgogICAgICAgICAgICAgIEBPdmVycmlkZQogICAgICAgICAgICAgIHByb3RlY3RlZCB2b2lkIG9uQ3JlYXRlKEJ1bmRsZSBzYXZlZEluc3RhbmNlU3RhdGUpIHsKICAgICAgICAgICAgICAgICAgc3VwZXIub25DcmVhdGUoc2F2ZWRJbnN0YW5jZVN0YXRlKTsKCiAgICAgICAgICAgICAgICAgIHdlYlZpZXcgPSBuZXcgV2ViVmlldyh0aGlzKTsKICAgICAgICAgICAgICAgICAgc2V0Q29udGVudFZpZXcod2ViVmlldyk7CgogICAgICAgICAgICAgICAgICBXZWJTZXR0aW5ncyBzID0gd2ViVmlldy5nZXRTZXR0aW5ncygpOwogICAgICAgICAgICAgICAgICBzLnNldEphdmFTY3JpcHRFbmFibGVkKHRydWUpOwogICAgICAgICAgICAgICAgICBzLnNldERvbVN0b3JhZ2VFbmFibGVkKHRydWUpOwogICAgICAgICAgICAgICAgICBzLnNldEFsbG93RmlsZUFjY2VzcyhmYWxzZSk7CiAgICAgICAgICAgICAgICAgIHMuc2V0QWxsb3dDb250ZW50QWNjZXNzKGZhbHNlKTsKICAgICAgICAgICAgICAgICAgcy5zZXRNZWRpYVBsYXliYWNrUmVxdWlyZXNVc2VyR2VzdHVyZShmYWxzZSk7CgogICAgICAgICAgICAgICAgICB3ZWJWaWV3LnNldFdlYkNocm9tZUNsaWVudChuZXcgV2ViQ2hyb21lQ2xpZW50KCkpOwogICAgICAgICAgICAgICAgICB3ZWJWaWV3LnNldFdlYlZpZXdDbGllbnQobmV3IFdlYlZpZXdDbGllbnQoKSB7CiAgICAgICAgICAgICAgICAgICAgICBAT3ZlcnJpZGUKICAgICAgICAgICAgICAgICAgICAgIHB1YmxpYyBib29sZWFuIHNob3VsZE92ZXJyaWRlVXJsTG9hZGluZyhXZWJWaWV3IHZpZXcsIFdlYlJlc291cmNlUmVxdWVzdCByZXF1ZXN0KSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgVXJpIHVyaSA9IHJlcXVlc3QuZ2V0VXJsKCk7CiAgICAgICAgICAgICAgICAgICAgICAgICAgU3RyaW5nIHNjaGVtZSA9IHVyaS5nZXRTY2hlbWUoKTsKICAgICAgICAgICAgICAgICAgICAgICAgICBpZiAoImh0dHAiLmVxdWFscyhzY2hlbWUpIHx8ICJodHRwcyIuZXF1YWxzKHNjaGVtZSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHx8ICJtYWlsdG8iLmVxdWFscyhzY2hlbWUpIHx8ICJ0ZWwiLmVxdWFscyhzY2hlbWUpKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHRyeSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBzdGFydEFjdGl2aXR5KG5ldyBJbnRlbnQoSW50ZW50LkFDVElPTl9WSUVXLCB1cmkpKTsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfSBjYXRjaCAoRXhjZXB0aW9uIGlnbm9yZWQpIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC8vIG5vIGFwcCBjYW4gaGFuZGxlIHRoaXMgbGluawogICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJldHVybiB0cnVlOwogICAgICAgICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgICAgICAgICAgICByZXR1cm4gZmFsc2U7CiAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgIH0pOwoKICAgICAgICAgICAgICAgICAgaWYgKHNhdmVkSW5zdGFuY2VTdGF0ZSAhPSBudWxsKSB7CiAgICAgICAgICAgICAgICAgICAgICB3ZWJWaWV3LnJlc3RvcmVTdGF0ZShzYXZlZEluc3RhbmNlU3RhdGUpOwogICAgICAgICAgICAgICAgICB9IGVsc2UgewogICAgICAgICAgICAgICAgICAgICAgd2ViVmlldy5sb2FkVXJsKCJmaWxlOi8vL2FuZHJvaWRfYXNzZXQvaW5kZXguaHRtbCIpOwogICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgfQoKICAgICAgICAgICAgICBAT3ZlcnJpZGUKICAgICAgICAgICAgICBwcm90ZWN0ZWQgdm9pZCBvblNhdmVJbnN0YW5jZVN0YXRlKEJ1bmRsZSBvdXRTdGF0ZSkgewogICAgICAgICAgICAgICAgICBzdXBlci5vblNhdmVJbnN0YW5jZVN0YXRlKG91dFN0YXRlKTsKICAgICAgICAgICAgICAgICAgd2ViVmlldy5zYXZlU3RhdGUob3V0U3RhdGUpOwogICAgICAgICAgICAgIH0KCiAgICAgICAgICAgICAgQE92ZXJyaWRlCiAgICAgICAgICAgICAgcHVibGljIHZvaWQgb25CYWNrUHJlc3NlZCgpIHsKICAgICAgICAgICAgICAgICAgaWYgKHdlYlZpZXcuY2FuR29CYWNrKCkpIHsKICAgICAgICAgICAgICAgICAgICAgIHdlYlZpZXcuZ29CYWNrKCk7CiAgICAgICAgICAgICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgICAgICAgICAgICBzdXBlci5vbkJhY2tQcmVzc2VkKCk7CiAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICB9CgogICAgICAgICAgICAgIEBPdmVycmlkZQogICAgICAgICAgICAgIHByb3RlY3RlZCB2b2lkIG9uRGVzdHJveSgpIHsKICAgICAgICAgICAgICAgICAgaWYgKHdlYlZpZXcgIT0gbnVsbCkgewogICAgICAgICAgICAgICAgICAgICAgd2ViVmlldy5kZXN0cm95KCk7CiAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgICAgc3VwZXIub25EZXN0cm95KCk7CiAgICAgICAgICAgICAgfQogICAgICAgICAgfQogICAgICAgICAgRU9GX0ZJTEVfNgogICAgICAgICAgbWtkaXIgLXAgJ19hbmRyb2lkL2FwcC9zcmMvbWFpbi9yZXMvZHJhd2FibGUnCiAgICAgICAgICBjYXQgPiAnX2FuZHJvaWQvYXBwL3NyYy9tYWluL3Jlcy9kcmF3YWJsZS9pY19sYXVuY2hlci54bWwnIDw8J0VPRl9GSUxFXzcnCiAgICAgICAgICA8P3htbCB2ZXJzaW9uPSIxLjAiIGVuY29kaW5nPSJ1dGYtOCI/PgogICAgICAgICAgPHZlY3RvciB4bWxuczphbmRyb2lkPSJodHRwOi8vc2NoZW1hcy5hbmRyb2lkLmNvbS9hcGsvcmVzL2FuZHJvaWQiCiAgICAgICAgICAgICAgYW5kcm9pZDp3aWR0aD0iMTA4ZHAiCiAgICAgICAgICAgICAgYW5kcm9pZDpoZWlnaHQ9IjEwOGRwIgogICAgICAgICAgICAgIGFuZHJvaWQ6dmlld3BvcnRXaWR0aD0iMTA4IgogICAgICAgICAgICAgIGFuZHJvaWQ6dmlld3BvcnRIZWlnaHQ9IjEwOCI+CiAgICAgICAgICAgICAgPHBhdGgKICAgICAgICAgICAgICAgICAgYW5kcm9pZDpmaWxsQ29sb3I9IiMxRTY2RjUiCiAgICAgICAgICAgICAgICAgIGFuZHJvaWQ6cGF0aERhdGE9Ik0yNCwxMGg2MGExNCwxNCAwIDAgMSAxNCwxNHY2MGExNCwxNCAwIDAgMSAtMTQsMTRoLTYwYTE0LDE0IDAgMCAxIC0xNCwtMTR2LTYwYTE0LDE0IDAgMCAxIDE0LC0xNHoiIC8+CiAgICAgICAgICAgICAgPHBhdGgKICAgICAgICAgICAgICAgICAgYW5kcm9pZDpmaWxsQ29sb3I9IiNGRkZGRkYiCiAgICAgICAgICAgICAgICAgIGFuZHJvaWQ6cGF0aERhdGE9Ik00MiwzMkw0Miw3Nkw3OCw1NHoiIC8+CiAgICAgICAgICA8L3ZlY3Rvcj4KICAgICAgICAgIEVPRl9GSUxFXzcKCiAgICAgIC0gbmFtZTogQ3VzdG9taXplIHByb2plY3QKICAgICAgICBlbnY6CiAgICAgICAgICBBUFBfTkFNRV9JTlBVVDogIiR7eyBnaXRodWIuZXZlbnQuaW5wdXRzLmFwcF9uYW1lIH19IgogICAgICAgICAgQVBQX0lEX0lOUFVUOiAiJHt7IGdpdGh1Yi5ldmVudC5pbnB1dHMucGFja2FnZV9uYW1lIH19IgogICAgICAgICAgUkVQTzogIiR7eyBnaXRodWIucmVwb3NpdG9yeSB9fSIKICAgICAgICAgIFJVTl9OVU1CRVI6ICIke3sgZ2l0aHViLnJ1bl9udW1iZXIgfX0iCiAgICAgICAgcnVuOiB8CiAgICAgICAgICBweXRob24zIC0gPDwnUFknCiAgICAgICAgICBpbXBvcnQgb3MsIHJlLCBodG1sLCBiYXNlNjQsIHNodXRpbCwgc3lzLCBwYXRobGliCgogICAgICAgICAgcm9vdCA9IHBhdGhsaWIuUGF0aCgiX2FuZHJvaWQiKQogICAgICAgICAgYXBwID0gcm9vdCAvICJhcHAiCiAgICAgICAgICBhc3NldHMgPSBhcHAgLyAic3JjL21haW4vYXNzZXRzIgogICAgICAgICAgYXNzZXRzLm1rZGlyKHBhcmVudHM9VHJ1ZSwgZXhpc3Rfb2s9VHJ1ZSkKCiAgICAgICAgICAjIDEpIHRoZSB3ZWIgY29udGVudDogd3d3LyBmb2xkZXIgKHdpdGggaW5kZXguaHRtbCkgb3IgYSBzaW5nbGUgaW5kZXguaHRtbAogICAgICAgICAgd3d3LCBpZHggPSBwYXRobGliLlBhdGgoInd3dyIpLCBwYXRobGliLlBhdGgoImluZGV4Lmh0bWwiKQogICAgICAgICAgaWYgKHd3dyAvICJpbmRleC5odG1sIikuaXNfZmlsZSgpOgogICAgICAgICAgICAgIHNodXRpbC5jb3B5dHJlZSh3d3csIGFzc2V0cywgZGlyc19leGlzdF9vaz1UcnVlKQogICAgICAgICAgICAgIG1haW5faHRtbCA9IHd3dyAvICJpbmRleC5odG1sIgogICAgICAgICAgZWxpZiBpZHguaXNfZmlsZSgpOgogICAgICAgICAgICAgIHNodXRpbC5jb3B5KGlkeCwgYXNzZXRzIC8gImluZGV4Lmh0bWwiKQogICAgICAgICAgICAgIG1haW5faHRtbCA9IGlkeAogICAgICAgICAgZWxzZToKICAgICAgICAgICAgICBwcmludCgiOjplcnJvcjo6aW5kZXguaHRtbCBub3QgZm91bmQuIFVwbG9hZCB5b3VyIEhUTUwgZmlsZSB0byB0aGUgcmVwb3NpdG9yeSByb290IGFuZCBuYW1lIGl0IGV4YWN0bHkgaW5kZXguaHRtbCIpCiAgICAgICAgICAgICAgc3lzLmV4aXQoMSkKCiAgICAgICAgICAjIDIpIGFwcCBuYW1lOiB3b3JrZmxvdyBpbnB1dCwgZWxzZSB0aGUgcGFnZSA8dGl0bGU+LCBlbHNlIGEgZGVmYXVsdAogICAgICAgICAgdGV4dCA9IG1haW5faHRtbC5yZWFkX3RleHQoZW5jb2Rpbmc9InV0Zi04IiwgZXJyb3JzPSJpZ25vcmUiKQogICAgICAgICAgbSA9IHJlLnNlYXJjaChyIjx0aXRsZVtePl0qPiguKj8pPC90aXRsZT4iLCB0ZXh0LCByZS5TIHwgcmUuSSkKICAgICAgICAgIHRpdGxlID0gaHRtbC51bmVzY2FwZShtLmdyb3VwKDEpKSBpZiBtIGVsc2UgIiIKICAgICAgICAgIG5hbWUgPSAiICIuam9pbigob3MuZW52aXJvbi5nZXQoIkFQUF9OQU1FX0lOUFVUIiwgIiIpLnN0cmlwKCkgb3IgdGl0bGUgb3IgIk15IEFwcCIpLnNwbGl0KCkpWzo1MF0KCiAgICAgICAgICAjIDMpIHBhY2thZ2UgbmFtZTogd29ya2Zsb3cgaW5wdXQsIGVsc2UgZGVyaXZlZCBmcm9tIHRoZSByZXBvc2l0b3J5IG5hbWUKICAgICAgICAgIEpBVkFfS1cgPSB7ImFic3RyYWN0IiwgImFzc2VydCIsICJib29sZWFuIiwgImJyZWFrIiwgImJ5dGUiLCAiY2FzZSIsICJjYXRjaCIsICJjaGFyIiwgImNsYXNzIiwKICAgICAgICAgICAgICAgICAgICAgImNvbnN0IiwgImNvbnRpbnVlIiwgImRlZmF1bHQiLCAiZG8iLCAiZG91YmxlIiwgImVsc2UiLCAiZW51bSIsICJleHRlbmRzIiwgImZpbmFsIiwKICAgICAgICAgICAgICAgICAgICAgImZpbmFsbHkiLCAiZmxvYXQiLCAiZm9yIiwgImdvdG8iLCAiaWYiLCAiaW1wbGVtZW50cyIsICJpbXBvcnQiLCAiaW5zdGFuY2VvZiIsICJpbnQiLAogICAgICAgICAgICAgICAgICAgICAiaW50ZXJmYWNlIiwgImxvbmciLCAibmF0aXZlIiwgIm5ldyIsICJwYWNrYWdlIiwgInByaXZhdGUiLCAicHJvdGVjdGVkIiwgInB1YmxpYyIsCiAgICAgICAgICAgICAgICAgICAgICJyZXR1cm4iLCAic2hvcnQiLCAic3RhdGljIiwgInN0cmljdGZwIiwgInN1cGVyIiwgInN3aXRjaCIsICJzeW5jaHJvbml6ZWQiLCAidGhpcyIsCiAgICAgICAgICAgICAgICAgICAgICJ0aHJvdyIsICJ0aHJvd3MiLCAidHJhbnNpZW50IiwgInRyeSIsICJ2b2lkIiwgInZvbGF0aWxlIiwgIndoaWxlIiwgInRydWUiLCAiZmFsc2UiLCAibnVsbCJ9CiAgICAgICAgICByZXBvID0gb3MuZW52aXJvbi5nZXQoIlJFUE8iLCAiIikuc3BsaXQoIi8iKVstMV0ubG93ZXIoKQogICAgICAgICAgc2x1ZyA9IHJlLnN1YihyIlteYS16MC05XSIsICIiLCByZXBvKSBvciAiYXBwIgogICAgICAgICAgaWYgbm90IHNsdWdbMF0uaXNhbHBoYSgpOgogICAgICAgICAgICAgIHNsdWcgPSAiYXBwIiArIHNsdWcKICAgICAgICAgIGlmIHNsdWcgaW4gSkFWQV9LVzoKICAgICAgICAgICAgICBzbHVnICs9ICJhcHAiCiAgICAgICAgICBhcHBfaWQgPSBvcy5lbnZpcm9uLmdldCgiQVBQX0lEX0lOUFVUIiwgIiIpLnN0cmlwKCkgb3IgImNvbS5odG1sMmFway4iICsgc2x1ZwogICAgICAgICAgc2VnbWVudHMgPSBhcHBfaWQuc3BsaXQoIi4iKQogICAgICAgICAgaWYgbm90IHJlLmZ1bGxtYXRjaChyIltBLVphLXpdW0EtWmEtejAtOV9dKihcLltBLVphLXpdW0EtWmEtejAtOV9dKikrIiwgYXBwX2lkKSBvciBhbnkocyBpbiBKQVZBX0tXIGZvciBzIGluIHNlZ21lbnRzKToKICAgICAgICAgICAgICBwcmludCgiOjplcnJvcjo6SW52YWxpZCBwYWNrYWdlIG5hbWU6ICIgKyBhcHBfaWQgKyAiICh1c2UgbGV0dGVycy9kaWdpdHMvdW5kZXJzY29yZSwgYXQgbGVhc3QgdHdvIHBhcnRzLCBlLmcuIGNvbS5teWNvbXBhbnkubXlnYW1lKSIpCiAgICAgICAgICAgICAgc3lzLmV4aXQoMSkKCgogICAgICAgICAgZGVmIHhtbF9zdHIocyk6CiAgICAgICAgICAgICAgcyA9IHMucmVwbGFjZSgiXFwiLCAiXFxcXCIpLnJlcGxhY2UoIiYiLCAiJmFtcDsiKS5yZXBsYWNlKCI8IiwgIiZsdDsiKS5yZXBsYWNlKCI+IiwgIiZndDsiKQogICAgICAgICAgICAgIHMgPSBzLnJlcGxhY2UoIiciLCAiXFwnIikucmVwbGFjZSgnIicsICdcXCInKQogICAgICAgICAgICAgIGlmIHNbOjFdIGluICgiQCIsICI/Iik6CiAgICAgICAgICAgICAgICAgIHMgPSAiXFwiICsgcwogICAgICAgICAgICAgIHJldHVybiBzCgoKICAgICAgICAgIHZhbHVlcyA9IGFwcCAvICJzcmMvbWFpbi9yZXMvdmFsdWVzIgogICAgICAgICAgdmFsdWVzLm1rZGlyKHBhcmVudHM9VHJ1ZSwgZXhpc3Rfb2s9VHJ1ZSkKICAgICAgICAgICh2YWx1ZXMgLyAic3RyaW5ncy54bWwiKS53cml0ZV90ZXh0KAogICAgICAgICAgICAgICc8P3htbCB2ZXJzaW9uPSIxLjAiIGVuY29kaW5nPSJ1dGYtOCI/PlxuPHJlc291cmNlcz5cbiAgICA8c3RyaW5nIG5hbWU9ImFwcF9uYW1lIj4lczwvc3RyaW5nPlxuPC9yZXNvdXJjZXM+XG4nICUgeG1sX3N0cihuYW1lKSwKICAgICAgICAgICAgICBlbmNvZGluZz0idXRmLTgiKQoKICAgICAgICAgICMgNCkgdmVyc2lvbjogYnVtcHMgb24gZXZlcnkgYnVpbGQgc28gbmV3IGJ1aWxkcyBpbnN0YWxsIG92ZXIgb2xkIG9uZXMKICAgICAgICAgIHJ1biA9IG9zLmVudmlyb24uZ2V0KCJSVU5fTlVNQkVSIiwgIjEiKS5zdHJpcCgpIG9yICIxIgogICAgICAgICAgZyA9IGFwcCAvICJidWlsZC5ncmFkbGUiCiAgICAgICAgICB0ID0gZy5yZWFkX3RleHQoZW5jb2Rpbmc9InV0Zi04IikKICAgICAgICAgIHQgPSB0LnJlcGxhY2UoIl9fQVBQX0lEX18iLCBhcHBfaWQpLnJlcGxhY2UoIl9fVkVSU0lPTl9DT0RFX18iLCBydW4pLnJlcGxhY2UoIl9fVkVSU0lPTl9OQU1FX18iLCAiMS4wLiIgKyBydW4pCiAgICAgICAgICBnLndyaXRlX3RleHQodCwgZW5jb2Rpbmc9InV0Zi04IikKCiAgICAgICAgICAjIDUpIGZpeGVkIHNpZ25pbmcga2V5IChzYW1lIGtleSBldmVyeSBidWlsZCwgc28gdXBkYXRlcyBpbnN0YWxsIG92ZXIgb2xkZXIgdmVyc2lvbnMpCiAgICAgICAgICAoYXBwIC8gImRlYnVnLmtleXN0b3JlIikud3JpdGVfYnl0ZXMoYmFzZTY0LmI2NGRlY29kZSgoYXBwIC8gImRlYnVnLmtleXN0b3JlLmI2NCIpLnJlYWRfdGV4dCgpKSkKCiAgICAgICAgICAjIDYpIG9wdGlvbmFsIGN1c3RvbSBpY29uOiBpY29uLnBuZyBpbiB0aGUgcmVwb3NpdG9yeSByb290CiAgICAgICAgICBpZiBwYXRobGliLlBhdGgoImljb24ucG5nIikuaXNfZmlsZSgpOgogICAgICAgICAgICAgIHNodXRpbC5jb3B5KCJpY29uLnBuZyIsIGFwcCAvICJzcmMvbWFpbi9yZXMvZHJhd2FibGUvaWNfbGF1bmNoZXIucG5nIikKICAgICAgICAgICAgICAoYXBwIC8gInNyYy9tYWluL3Jlcy9kcmF3YWJsZS9pY19sYXVuY2hlci54bWwiKS51bmxpbmsoKQoKICAgICAgICAgIHByaW50KCJBcHAgbmFtZToiLCBuYW1lKQogICAgICAgICAgcHJpbnQoIlBhY2thZ2UgOiIsIGFwcF9pZCkKICAgICAgICAgIHByaW50KCJWZXJzaW9uIDogMS4wLiIgKyBydW4sICIoY29kZSAiICsgcnVuICsgIikiKQoKICAgICAgICAgIFBZCgogICAgICAtIHVzZXM6IGFjdGlvbnMvc2V0dXAtamF2YUB2NAogICAgICAgIHdpdGg6CiAgICAgICAgICBkaXN0cmlidXRpb246IHRlbXVyaW4KICAgICAgICAgIGphdmEtdmVyc2lvbjogMTcKCiAgICAgIC0gdXNlczogZ3JhZGxlL2FjdGlvbnMvc2V0dXAtZ3JhZGxlQHY0CiAgICAgICAgd2l0aDoKICAgICAgICAgIGdyYWRsZS12ZXJzaW9uOiA4LjkKCiAgICAgIC0gbmFtZTogQnVpbGQgQVBLCiAgICAgICAgcnVuOiBncmFkbGUgLXAgX2FuZHJvaWQgYXNzZW1ibGVEZWJ1ZwoKICAgICAgLSBuYW1lOiBDb2xsZWN0IEFQSwogICAgICAgIHJ1bjogfAogICAgICAgICAgbWtkaXIgLXAgb3V0CiAgICAgICAgICBjcCBfYW5kcm9pZC9hcHAvYnVpbGQvb3V0cHV0cy9hcGsvZGVidWcvYXBwLWRlYnVnLmFwayBvdXQvYXBwLmFwawoKICAgICAgLSB1c2VzOiBhY3Rpb25zL3VwbG9hZC1hcnRpZmFjdEB2NAogICAgICAgIHdpdGg6CiAgICAgICAgICBuYW1lOiBhcGsKICAgICAgICAgIHBhdGg6IG91dC9hcHAuYXBrCgogICAgICAtIG5hbWU6IFB1Ymxpc2ggcmVsZWFzZSAoZGlyZWN0IEFQSyBkb3dubG9hZCkKICAgICAgICBlbnY6CiAgICAgICAgICBHSF9UT0tFTjogIiR7eyBnaXRodWIudG9rZW4gfX0iCiAgICAgICAgcnVuOiB8CiAgICAgICAgICBnaCByZWxlYXNlIGNyZWF0ZSAiYnVpbGQtJHt7IGdpdGh1Yi5ydW5fbnVtYmVyIH19IiBvdXQvYXBwLmFwayBcCiAgICAgICAgICAgIC0tdGl0bGUgIkJ1aWxkICR7eyBnaXRodWIucnVuX251bWJlciB9fSIgXAogICAgICAgICAgICAtLW5vdGVzICJBUEsgYnVpbHQgZnJvbSBpbmRleC5odG1sIiBcCiAgICAgICAgICAgIC0tdGFyZ2V0ICIke3sgZ2l0aHViLnNoYSB9fSIK";
+var WF_PATH = ".github/workflows/build.yml";
+var WF_FILE = "build.yml";
+var SPEED = Number(window.__H2A_SPEED__) || 1;
 
-function newGame() {
-  R = +rowsSel.value; C = +colsSel.value;
-  H = Array.from({length:R+1}, () => Array(C).fill(-1));   // خطوط أفقية
-  V = Array.from({length:R},   () => Array(C+1).fill(-1)); // خطوط رأسية
-  owner = Array.from({length:R}, () => Array(C).fill(-1));
-  turn = 0; history = []; finished = false;
-  document.getElementById("modal").classList.remove("show");
-  render();
-}
+function $(id) { return document.getElementById(id); }
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms / SPEED); }); }
 
-function boxDone(r, c) {
-  return r >= 0 && c >= 0 && r < R && c < C &&
-    H[r][c] >= 0 && H[r+1][c] >= 0 && V[r][c] >= 0 && V[r][c+1] >= 0;
-}
+var store = {
+  get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  del: function (k) { try { localStorage.removeItem(k); } catch (e) {} }
+};
 
-function play(type, r, c) {
-  const arr = type === "h" ? H : V;
-  if (finished || arr[r][c] >= 0) return;
-  const closed = [];
-  arr[r][c] = turn;
-  const cand = type === "h" ? [[r-1,c],[r,c]] : [[r,c-1],[r,c]];
-  for (const [br, bc] of cand) {
-    if (boxDone(br, bc) && owner[br][bc] < 0) { owner[br][bc] = turn; closed.push([br,bc]); }
+/* ---------- encoding helpers ---------- */
+function b64FromBytes(bytes) {
+  var bin = "", CH = 0x8000;
+  for (var i = 0; i < bytes.length; i += CH) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
   }
-  history.push({type, r, c, closed, player: turn});
-  if (closed.length === 0) turn = 1 - turn; // إغلاق مربع = دور إضافي
-  render();
-  if (owner.flat().every(o => o >= 0)) endGame();
+  return btoa(bin);
+}
+function b64FromText(t) { return b64FromBytes(new TextEncoder().encode(t)); }
+function textFromB64(b) {
+  var bin = atob(b.replace(/\s/g, ""));
+  var arr = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(arr);
+}
+var WORKFLOW_TEXT = textFromB64(WF_B64);
+var WORKFLOW_B64_CLEAN = b64FromText(WORKFLOW_TEXT);
+
+function fnv(str) {
+  var h = 0x811c9dc5, bytes = new TextEncoder().encode(str);
+  for (var i = 0; i < bytes.length; i++) { h ^= bytes[i]; h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(16).padStart(8, "0");
+}
+function defaultPackage(name) { return "com.html2apk.a" + fnv(name.trim().toLowerCase()); }
+var PKG_RE = /^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$/;
+
+function pageTitle(html) {
+  try { return (new DOMParser().parseFromString(html, "text/html").title || "").trim(); }
+  catch (e) { return ""; }
 }
 
-function undo() {
-  if (!history.length) return;
-  const m = history.pop();
-  (m.type === "h" ? H : V)[m.r][m.c] = -1;
-  for (const [br, bc] of m.closed) owner[br][bc] = -1;
-  turn = m.player; finished = false;
-  document.getElementById("modal").classList.remove("show");
-  render();
+/* ---------- tiny DOM helper (no innerHTML with untrusted text) ---------- */
+function el(tag, attrs) {
+  var n = document.createElement(tag);
+  if (attrs) for (var k in attrs) {
+    if (k === "text") n.textContent = attrs[k];
+    else if (k === "class") n.className = attrs[k];
+    else n.setAttribute(k, attrs[k]);
+  }
+  for (var i = 2; i < arguments.length; i++) {
+    var c = arguments[i];
+    if (c == null) continue;
+    n.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+  }
+  return n;
+}
+function safeGithubUrl(u) { return typeof u === "string" && u.indexOf("https://github.com/") === 0 ? u : "https://github.com/"; }
+
+/* ---------- log + steps ---------- */
+function log(msg) {
+  var pre = $("log");
+  pre.classList.add("show");
+  pre.textContent += new Date().toLocaleTimeString("en-GB") + "  " + msg + "\n";
+  pre.scrollTop = pre.scrollHeight;
+}
+var STEPS = [
+  ["auth", "التحقق من الحساب"],
+  ["repo", "تجهيز المستودع"],
+  ["files", "رفع الملفات"],
+  ["dispatch", "تشغيل البناء"],
+  ["build", "البناء على GitHub"],
+  ["done", "تجهيز رابط التحميل"]
+];
+var ICONS = { pending: "○", run: "⏳", ok: "✔", err: "✖" };
+function renderSteps() {
+  var ul = $("steps");
+  ul.textContent = "";
+  STEPS.forEach(function (s) {
+    var li = el("li", { "class": "pending", "data-id": s[0] }, el("span", { "class": "ic", text: ICONS.pending }), el("span", { text: s[1] }), el("small", { text: "" }));
+    ul.appendChild(li);
+  });
+}
+function setStep(id, state, extra) {
+  var li = document.querySelector('#steps li[data-id="' + id + '"]');
+  if (!li) return;
+  li.className = state;
+  li.querySelector(".ic").textContent = ICONS[state];
+  li.querySelector("small").textContent = extra || "";
 }
 
-function scores() {
-  const s = [0,0];
-  owner.flat().forEach(o => { if (o >= 0) s[o]++; });
-  return s;
+/* ---------- GitHub API ---------- */
+function GhError(status, message) { this.name = "GhError"; this.status = status; this.message = message; }
+GhError.prototype = Object.create(Error.prototype);
+
+async function gh(token, method, path, body, allow) {
+  var headers = { "Accept": "application/vnd.github+json", "Authorization": "Bearer " + token };
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+  var res;
+  try {
+    res = await fetch(API + path, { method: method, headers: headers, body: body !== undefined ? JSON.stringify(body) : undefined, cache: "no-store" });
+  } catch (e) {
+    throw new GhError(0, "تعذّر الاتصال بـ GitHub. تأكد من الإنترنت، وافتح هذه الصفحة من متصفح عادي (مثل Chrome) وليس من داخل معاينة تطبيق.");
+  }
+  var data = null;
+  if (res.status !== 204) { try { data = await res.json(); } catch (e) {} }
+  if (!res.ok && !(allow && allow.indexOf(res.status) >= 0)) {
+    throw new GhError(res.status, (data && data.message) || res.statusText || ("HTTP " + res.status));
+  }
+  return { status: res.status, data: data, headers: res.headers };
 }
 
-function render() {
-  const W = PAD*2 + C*CELL, Ht = PAD*2 + R*CELL;
-  const svg = document.getElementById("svg");
-  svg.setAttribute("viewBox", `0 0 ${W} ${Ht}`);
-  let out = "";
-  // المربعات الملونة
-  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
-    if (owner[r][c] >= 0) {
-      const x = PAD + c*CELL, y = PAD + r*CELL;
-      out += `<rect x="${x}" y="${y}" width="${CELL}" height="${CELL}" fill="var(--${COLORS[owner[r][c]]}-fill)"/>`;
-      out += `<text x="${x+CELL/2}" y="${y+CELL/2+7}" text-anchor="middle" font-size="22" fill="var(--${COLORS[owner[r][c]]})" font-weight="700">${owner[r][c]===0?"أ":"ز"}</text>`;
+function friendly(e) {
+  if (e instanceof GhError) {
+    if (e.status === 401) return "التوكن غير صالح أو منتهي. أنشئ توكن جديد والصقه.";
+    if (e.status === 403) return "GitHub رفض الطلب (صلاحيات ناقصة أو حد الاستخدام): " + e.message;
+    return e.message;
+  }
+  return (e && e.message) || String(e);
+}
+
+async function upsertFile(ctx, path, b64, message) {
+  var p = path.split("/").map(encodeURIComponent).join("/");
+  var base = "/repos/" + ctx.owner + "/" + ctx.repo + "/contents/" + p;
+  var q = "?ref=" + encodeURIComponent(ctx.branch);
+  var cur = await gh(ctx.token, "GET", base + q, undefined, [404]);
+  var sha;
+  if (cur.status === 200 && cur.data && !Array.isArray(cur.data)) {
+    sha = cur.data.sha;
+    if (cur.data.encoding === "base64" && (cur.data.content || "").replace(/\s/g, "") === b64) return false;
+  }
+  for (var i = 0; i < 4; i++) {
+    try {
+      var body = { message: message, content: b64, branch: ctx.branch };
+      if (sha) body.sha = sha;
+      await gh(ctx.token, "PUT", base, body);
+      return true;
+    } catch (e) {
+      if (i < 3 && (e.status === 409 || e.status === 422)) {
+        await sleep(1500);
+        var again = await gh(ctx.token, "GET", base + q, undefined, [404]);
+        sha = again.status === 200 && again.data ? again.data.sha : undefined;
+        continue;
+      }
+      throw e;
     }
   }
-  const lineSVG = (type, r, c, x1, y1, x2, y2, o) => {
-    const col = o >= 0 ? `var(--${COLORS[o]})` : "";
-    return `<g class="${o>=0?"drawn":""}" ${o<0?`data-t="${type}" data-r="${r}" data-c="${c}"`:""}>
-      <line class="vis" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" ${col?`style="stroke:${col}"`:""}/>
-      <line class="hit" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/></g>`;
-  };
-  for (let r = 0; r <= R; r++) for (let c = 0; c < C; c++)
-    out += lineSVG("h", r, c, PAD+c*CELL, PAD+r*CELL, PAD+(c+1)*CELL, PAD+r*CELL, H[r][c]);
-  for (let r = 0; r < R; r++) for (let c = 0; c <= C; c++)
-    out += lineSVG("v", r, c, PAD+c*CELL, PAD+r*CELL, PAD+c*CELL, PAD+(r+1)*CELL, V[r][c]);
-  for (let r = 0; r <= R; r++) for (let c = 0; c <= C; c++)
-    out += `<circle class="dot" cx="${PAD+c*CELL}" cy="${PAD+r*CELL}" r="5.5"/>`;
-  svg.innerHTML = out;
+}
 
-  const s = scores();
-  document.getElementById("sRed").textContent = s[0];
-  document.getElementById("sBlue").textContent = s[1];
-  document.getElementById("pRed").classList.toggle("active", turn === 0 && !finished);
-  document.getElementById("pBlue").classList.toggle("active", turn === 1 && !finished);
-  const st = document.getElementById("status");
-  if (!finished) {
-    st.innerHTML = `الدور على <span class="${turn===0?"r":"b"}">${NAMES[turn]}</span>`;
+async function removeFileIfExists(ctx, path, message) {
+  var p = path.split("/").map(encodeURIComponent).join("/");
+  var base = "/repos/" + ctx.owner + "/" + ctx.repo + "/contents/" + p;
+  var cur = await gh(ctx.token, "GET", base + "?ref=" + encodeURIComponent(ctx.branch), undefined, [404]);
+  if (cur.status !== 200 || !cur.data || !cur.data.sha) return false;
+  await gh(ctx.token, "DELETE", base, { message: message, sha: cur.data.sha, branch: ctx.branch });
+  return true;
+}
+
+async function latestRunId(ctx) {
+  var r = await gh(ctx.token, "GET", "/repos/" + ctx.owner + "/" + ctx.repo + "/actions/runs?per_page=1", undefined, [404]);
+  return (r.status === 200 && r.data && r.data.workflow_runs && r.data.workflow_runs[0]) ? r.data.workflow_runs[0].id : 0;
+}
+
+async function dispatch(ctx, inputs) {
+  var path = "/repos/" + ctx.owner + "/" + ctx.repo + "/actions/workflows/" + WF_FILE + "/dispatches";
+  var last;
+  for (var i = 0; i < 15; i++) {
+    try {
+      await gh(ctx.token, "POST", path, { ref: ctx.branch, inputs: inputs });
+      return;
+    } catch (e) {
+      last = e;
+      if (e.status === 404 || e.status === 422) {
+        setStep("dispatch", "run", "ننتظر GitHub يسجّل الملف…");
+        await sleep(3000);
+        continue;
+      }
+      throw e;
+    }
   }
-  document.getElementById("undoBtn").disabled = history.length === 0;
+  throw last;
 }
 
-function endGame() {
-  finished = true;
-  const s = scores();
-  document.getElementById("fRed").textContent = s[0];
-  document.getElementById("fBlue").textContent = s[1];
-  document.getElementById("winTitle").textContent =
-    s[0] === s[1] ? "🤝 تعادل!" : `🏆 فاز ${s[0] > s[1] ? "الأحمر" : "الأزرق"}!`;
-  document.getElementById("status").textContent = "انتهت اللعبة";
-  document.getElementById("modal").classList.add("show");
-  render();
+async function waitForRun(ctx, afterId) {
+  for (var i = 0; i < 40; i++) {
+    var r = await gh(ctx.token, "GET", "/repos/" + ctx.owner + "/" + ctx.repo + "/actions/runs?event=workflow_dispatch&per_page=10");
+    var runs = ((r.data && r.data.workflow_runs) || []).filter(function (x) { return x.id > afterId; });
+    if (runs.length) { runs.sort(function (a, b) { return b.id - a.id; }); return runs[0]; }
+    await sleep(3000);
+  }
+  throw new Error("ما ظهر تشغيل البناء على GitHub. افتح تبويب Actions في المستودع وتأكد إنه مفعّل.");
 }
 
-document.getElementById("svg").addEventListener("click", e => {
-  const g = e.target.closest("g[data-t]");
-  if (g) play(g.dataset.t, +g.dataset.r, +g.dataset.c);
+function mmss(ms) { var s = Math.floor(ms / 1000); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
+
+async function waitForCompletion(ctx, run) {
+  var t0 = Date.now();
+  for (;;) {
+    var r = await gh(ctx.token, "GET", "/repos/" + ctx.owner + "/" + ctx.repo + "/actions/runs/" + run.id);
+    run = r.data;
+    var detail = "";
+    try {
+      var j = await gh(ctx.token, "GET", "/repos/" + ctx.owner + "/" + ctx.repo + "/actions/runs/" + run.id + "/jobs");
+      var job = (j.data.jobs || [])[0];
+      var st = job && (job.steps || []).filter(function (s) { return s.status === "in_progress"; })[0];
+      if (st) detail = st.name + " · ";
+    } catch (e) {}
+    setStep("build", "run", detail + mmss(Date.now() - t0));
+    if (run.status === "completed") return run;
+    if (Date.now() - t0 > 25 * 60 * 1000) throw new Error("البناء أخذ وقت طويل جداً. تابعه من تبويب Actions في المستودع.");
+    await sleep(5000);
+  }
+}
+
+async function failureDetails(ctx, run) {
+  var out = [];
+  try {
+    var j = await gh(ctx.token, "GET", "/repos/" + ctx.owner + "/" + ctx.repo + "/actions/runs/" + run.id + "/jobs");
+    var jobs = j.data.jobs || [];
+    for (var i = 0; i < jobs.length; i++) {
+      var job = jobs[i];
+      if (job.conclusion !== "failure") continue;
+      var fs = (job.steps || []).filter(function (s) { return s.conclusion === "failure"; })[0];
+      if (fs) out.push("فشلت الخطوة: " + fs.name);
+      try {
+        var a = await gh(ctx.token, "GET", "/repos/" + ctx.owner + "/" + ctx.repo + "/check-runs/" + job.id + "/annotations");
+        (a.data || []).forEach(function (x) { if (x.annotation_level === "failure" && x.message) out.push(x.message); });
+      } catch (e) {}
+    }
+  } catch (e) {}
+  return out;
+}
+
+async function findRelease(ctx, run) {
+  var tag = "build-" + run.run_number;
+  for (var i = 0; i < 6; i++) {
+    var r = await gh(ctx.token, "GET", "/repos/" + ctx.owner + "/" + ctx.repo + "/releases/tags/" + encodeURIComponent(tag), undefined, [404]);
+    if (r.status === 200 && r.data) {
+      var asset = (r.data.assets || []).filter(function (a) { return a.name === "app.apk"; })[0];
+      if (asset) return { release: r.data, asset: asset };
+    }
+    await sleep(3000);
+  }
+  throw new Error("البناء نجح لكن ما لقيت ملف الـAPK في Releases. افتح صفحة المستودع وشوف Releases.");
+}
+
+/* ---------- results ---------- */
+function clearResult() { $("result").textContent = ""; }
+function showSuccess(res, info) {
+  var mb = (res.asset.size / 1048576).toFixed(2);
+  var box = el("div", { "class": "result ok" },
+    el("h3", { text: "✅ الـAPK جاهز" }),
+    el("a", { "class": "btn primary big", href: safeGithubUrl(res.asset.browser_download_url), rel: "noopener noreferrer" },
+      "⬇️ تحميل الـAPK ", el("bdi", { text: "(" + mb + " MB)" })),
+    el("p", { "class": "note" },
+      "التطبيق: ", el("bdi", { text: info.appName }),
+      " · الحزمة: ", el("bdi", { text: info.pkg }),
+      " · الإصدار: ", el("bdi", { text: "1.0." + info.run.run_number })),
+    el("ol", { "class": "how" },
+      el("li", { text: "افتح الملف بعد التحميل واضغط «تثبيت»." }),
+      el("li", { text: "لو ظهر تحذير، فعّل «السماح بالتثبيت من هذا المصدر» ثم ارجع واضغط تثبيت." }),
+      el("li", { text: "لو ظهر تحذير Play Protect اختر «تثبيت على أي حال» (التطبيق موقّع بمفتاح شخصي)." })
+    ),
+    el("p", { "class": "note" }, el("a", { "class": "plain", href: safeGithubUrl(res.release.html_url), target: "_blank", rel: "noopener noreferrer", text: "صفحة الإصدار على GitHub" }))
+  );
+  $("result").appendChild(box);
+  box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+function showFailure(message, lines, runUrl) {
+  var ul = el("ul");
+  (lines || []).forEach(function (l) { ul.appendChild(el("li", { text: l })); });
+  var box = el("div", { "class": "result bad" },
+    el("h3", { text: "❌ ما اكتمل البناء" }),
+    el("p", { text: message }),
+    ul.childNodes.length ? ul : null,
+    runUrl ? el("p", { "class": "note" }, el("a", { "class": "plain", href: safeGithubUrl(runUrl), target: "_blank", rel: "noopener noreferrer", text: "افتح سجل البناء على GitHub" })) : null
+  );
+  $("result").appendChild(box);
+  box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+/* ---------- inputs ---------- */
+var iconBytes = null;
+
+function refreshDetected() {
+  var html = $("code").value;
+  var box = $("detected");
+  if (!html.trim()) { box.textContent = ""; return; }
+  var name = $("appName").value.trim() || pageTitle(html) || "My App";
+  var pkg = $("pkg").value.trim() || defaultPackage(name);
+  box.textContent = "";
+  box.appendChild(document.createTextNode("الاسم: "));
+  box.appendChild(el("bdi", { text: name }));
+  box.appendChild(document.createTextNode(" · الحزمة: "));
+  box.appendChild(el("bdi", { text: pkg }));
+  box.appendChild(document.createTextNode(" · الحجم: "));
+  box.appendChild(el("bdi", { text: (new Blob([html]).size / 1024).toFixed(1) + " KB" }));
+}
+
+$("file").addEventListener("change", async function () {
+  var f = this.files && this.files[0];
+  if (!f) return;
+  $("code").value = await f.text();
+  refreshDetected();
 });
-document.getElementById("newBtn").onclick = newGame;
-document.getElementById("againBtn").onclick = newGame;
-document.getElementById("undoBtn").onclick = undo;
-rowsSel.onchange = colsSel.onchange = newGame;
+$("icon").addEventListener("change", async function () {
+  iconBytes = null;
+  var f = this.files && this.files[0];
+  if (!f) return;
+  var buf = new Uint8Array(await f.arrayBuffer());
+  var sig = [0x89, 0x50, 0x4e, 0x47];
+  var okPng = sig.every(function (b, i) { return buf[i] === b; });
+  if (!okPng) { alert("الملف ليس PNG صالح."); this.value = ""; return; }
+  if (buf.length > 2 * 1048576) { alert("الأيقونة كبيرة (أكثر من 2MB). استخدم صورة أصغر، مثلاً 512×512."); this.value = ""; return; }
+  iconBytes = buf;
+});
+["code", "appName", "pkg"].forEach(function (id) { $(id).addEventListener("input", refreshDetected); });
 
-newGame();
+$("forget").addEventListener("click", function () {
+  store.del("h2a_token"); $("token").value = "";
+  alert("تم حذف التوكن من هذا الجهاز.");
+});
+
+(function restore() {
+  var t = store.get("h2a_token"), r = store.get("h2a_repo");
+  if (t) $("token").value = t;
+  if (r) $("repo").value = r;
+})();
+
+/* ---------- main flow ---------- */
+async function flow() {
+  var token = $("token").value.trim();
+  var repoName = $("repo").value.trim();
+  var html = $("code").value;
+  var current = "auth";
+
+  if (!token) throw new Error("الصق التوكن أولاً (الخطوة ١).");
+  if (!/^[A-Za-z0-9._-]{1,100}$/.test(repoName) || repoName === "." || repoName === "..") throw new Error("اسم المستودع غير صالح. استخدم حروف إنجليزية وأرقام و - و _ فقط.");
+  if (!html.trim()) throw new Error("الصق كود HTML أو اختر الملف (الخطوة ٢).");
+
+  var appName = $("appName").value.trim() || pageTitle(html) || "My App";
+  var pkg = $("pkg").value.trim() || defaultPackage(appName);
+  if (!PKG_RE.test(pkg)) throw new Error("معرّف الحزمة غير صالح: " + pkg + " (مثال صحيح: com.mycompany.mygame).");
+
+  if ($("remember").checked) { store.set("h2a_token", token); } else { store.del("h2a_token"); }
+  store.set("h2a_repo", repoName);
+
+  try {
+    /* 1) auth */
+    setStep("auth", "run");
+    var u = await gh(token, "GET", "/user");
+    var owner = u.data.login;
+    var scopes = u.headers.get("x-oauth-scopes");
+    if (scopes !== null) {
+      var have = scopes.split(",").map(function (s) { return s.trim(); });
+      if (have.indexOf("repo") < 0 || have.indexOf("workflow") < 0) {
+        throw new Error("التوكن ينقصه صلاحيات. لازم يكون فيه repo و workflow. أنشئه من الزر في الخطوة ١ بدون تغيير الخيارات.");
+      }
+    }
+    log("الحساب: " + owner);
+    setStep("auth", "ok", owner);
+
+    /* 2) repo */
+    current = "repo";
+    setStep("repo", "run");
+    var rr = await gh(token, "GET", "/repos/" + owner + "/" + repoName, undefined, [404]);
+    var repo;
+    if (rr.status === 404) {
+      log("إنشاء المستودع " + repoName);
+      var created = await gh(token, "POST", "/user/repos", { name: repoName, description: "APKs built with html-to-apk", "private": false, auto_init: true });
+      repo = created.data;
+      await sleep(2000);
+    } else {
+      repo = rr.data;
+      if (repo.permissions && repo.permissions.push === false) throw new Error("ما عندك صلاحية الكتابة على هذا المستودع.");
+    }
+    var ctx = { token: token, owner: owner, repo: repoName, branch: repo.default_branch || "main" };
+    log("المستودع: " + owner + "/" + repoName + " (" + ctx.branch + ")");
+    setStep("repo", "ok", owner + "/" + repoName);
+
+    /* 3) files */
+    current = "files";
+    setStep("files", "run");
+    var wf = await upsertFile(ctx, WF_PATH, WORKFLOW_B64_CLEAN, "Update build workflow");
+    log(wf ? "تم تحديث ملف البناء" : "ملف البناء محدّث مسبقاً");
+    await upsertFile(ctx, "index.html", b64FromText(html), "Update index.html");
+    log("تم رفع index.html");
+    if (iconBytes) {
+      await upsertFile(ctx, "icon.png", b64FromBytes(iconBytes), "Update icon");
+      log("تم رفع الأيقونة");
+    } else {
+      var removed = await removeFileIfExists(ctx, "icon.png", "Remove icon");
+      if (removed) log("حُذفت أيقونة قديمة");
+    }
+    setStep("files", "ok");
+
+    /* 4) dispatch */
+    current = "dispatch";
+    setStep("dispatch", "run");
+    var before = await latestRunId(ctx);
+    await dispatch(ctx, { app_name: appName, package_name: pkg });
+    log("تم إرسال أمر البناء");
+    setStep("dispatch", "ok");
+
+    /* 5) build */
+    current = "build";
+    setStep("build", "run", "ننتظر بداية التشغيل…");
+    var run = await waitForRun(ctx, before);
+    log("بدأ التشغيل #" + run.run_number + " — " + safeGithubUrl(run.html_url));
+    run = await waitForCompletion(ctx, run);
+
+    if (run.conclusion !== "success") {
+      setStep("build", "err", "فشل");
+      var lines = await failureDetails(ctx, run);
+      showFailure("فشل البناء على GitHub (" + (run.conclusion || "unknown") + ").", lines, run.html_url);
+      return;
+    }
+    setStep("build", "ok", "اكتمل");
+
+    /* 6) download link */
+    current = "done";
+    setStep("done", "run");
+    var found = await findRelease(ctx, run);
+    setStep("done", "ok");
+    showSuccess(found, { appName: appName, pkg: pkg, run: run });
+  } catch (e) {
+    setStep(current, "err");
+    throw e;
+  }
+}
+
+$("build").addEventListener("click", async function () {
+  var btn = this;
+  btn.disabled = true;
+  clearResult();
+  $("log").textContent = "";
+  renderSteps();
+  try { await flow(); }
+  catch (e) { log("خطأ: " + friendly(e)); showFailure(friendly(e), [], null); }
+  finally { btn.disabled = false; }
+});
+
+renderSteps();
+refreshDetected();
+})();
 </script>
 </body>
 </html>
