@@ -839,15 +839,24 @@ function requestNativeNotificationPermission() {
 }
 
 function exitApp() {
-  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
-    window.Capacitor.Plugins.App.exitApp();
-  } else if (navigator.app && navigator.app.exitApp) {
-    navigator.app.exitApp();
-  } else if (navigator.device && navigator.device.exitApp) {
-    navigator.device.exitApp();
-  } else if (window.Android && window.Android.exitApp) {
-    window.Android.exitApp();
-  } else {
+  try {
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+      window.Capacitor.Plugins.App.exitApp();
+    } else if (navigator.app && typeof navigator.app.exitApp === 'function') {
+      navigator.app.exitApp();
+    } else if (navigator.device && typeof navigator.device.exitApp === 'function') {
+      navigator.device.exitApp();
+    } else if (window.Android && typeof window.Android.exitApp === 'function') {
+      window.Android.exitApp();
+    } else {
+      window.close();
+      setTimeout(function() {
+        // 如果無法直接關閉，提供提示
+        console.log('App exit requested');
+      }, 300);
+    }
+  } catch (e) {
+    console.error(e);
     window.close();
   }
 }
@@ -999,7 +1008,6 @@ function getCalendarData(y, m) {
      if(d.sMonth === 4) {
         var qmDay = getQingMingDay(d.sYear);
         if(qmDay === 4) {
-           // 檢查 4/4 當天是否為星期四 (week === 4)
            var targetCheckObj = extDays.find(function(item) { return item.sYear === d.sYear && item.sMonth === 4 && item.sDay === 4; });
            if (targetCheckObj && targetCheckObj.week === 4) {
               if(d.sDay === 4) { d.solarFestival += "兒童節 清明節 "; d.color = 'var(--accent-holiday)'; d.isHoliday = true; d.isOriginalHoliday = true; }
@@ -1453,14 +1461,12 @@ function syncNativeAlarms() {
 
             if (a.shifts.includes(shiftName)) {
               var timingDesc = advanceDays === 0 ? "當天班別：" : "前一天班別：";
-              var soundFileName = a.sound ? (a.sound + '.mp3') : undefined;
-
+              
               notificationsToSchedule.push({
                 title: "⏰ " + a.title,
                 body: timingDesc + "[" + shiftName + "] 時間已到！",
                 id: Math.floor(Math.random() * 2147483647),
                 channelId: 'alarm_channel', 
-                sound: soundFileName, 
                 schedule: { 
                   at: targetDate,
                   allowWhileIdle: true,
@@ -1556,7 +1562,7 @@ function renderAlarmList() {
                   '<span class="alarm-title" style="margin-left:6px;">' + a.title + '</span>' +
                   '<span style="font-size:7.5pt; color:#64748b; margin-left:4px;">[' + timingText + ' | ' + soundText + ']</span>' +
                 '</div>' +
-                '<div style="display:flex; align-items:center; gap:8px;">' +
+                  '<div style="display:flex; align-items:center; gap:8px;">' +
                   '<label class="switch">' +
                     '<input type="checkbox" ' + (a.enabled ? 'checked' : '') + ' onchange="toggleAlarm(' + a.id + ')">' +
                     '<span class="slider"></span>' +
